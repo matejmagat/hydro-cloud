@@ -23,6 +23,8 @@ function TableView() {
                 </tr>
                 </tbody>
             </table>
+
+            <button>Export Data</button>
         </div>
     );
 }

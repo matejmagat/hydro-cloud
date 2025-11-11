@@ -23,14 +23,14 @@ function Sidebar() {
             </div>
             <div>
                 <div style={{ fontWeight: 'bold', fontSize: '1.1em' }}>Time Period</div>
-                <div style={{ display: 'flex', justifyContent: 'start', gap: '18px', margin: '12px 0 0 0' }}>
+                <div style={{ justifyContent: 'start', gap: '18px', margin: '12px 0 0 0' }}>
                     <div>
                         <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>From</div>
-                        <input type="text" />
+                        <input type="date" />
                     </div>
                     <div>
                         <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>To</div>
-                        <input type="text"/>
+                        <input type="date"/>
                     </div>
                 </div>
             </div>
