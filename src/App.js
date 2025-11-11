@@ -3,10 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 
 import Navbar from './components/navigation/Navbar';
 import Footer from './components/navigation/Footer';
-import Tabs from './components/app/Tabs';
-import Sidebar from './components/app/Sidebar';
-import MapView from './components/app/MapView';
-import TableView from './components/app/TableView';
+import Tabs from './components/mainView/Tabs';
+import Sidebar from './components/mainView/Sidebar';
+import MapView from './components/mainView/MapView';
+import TableView from './components/mainView/TableView';
 import AdminPage from './components/admin/AdminPage';
 import LoginPage from './components/login/LoginPage';
 

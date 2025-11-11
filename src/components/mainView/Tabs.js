@@ -1,5 +1,5 @@
 import React from 'react';
-import './app.css'
+import './mainView.css'
 import '../common.css'
 
 function Tabs({activeTab, setActiveTab}) {
