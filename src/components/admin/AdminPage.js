@@ -1,10 +1,18 @@
-import React from 'react';
+import React, {useState} from 'react';
+import Tabs from "../navigation/Tabs";
+import DataManager from "./DataManager";
+import UserManager from "./UserManager";
+
 
 function AdminPage() {
+    const [activeTab, setActiveTab] = useState('data');
+    const tabNames = ['data', 'users'];
+
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>Admin Dashboard</h1>
-            <p>This is a dummy admin page.</p>
+
+        <div>
+            <Tabs tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab} />
+            {activeTab === 'data' ? <DataManager /> : <UserManager />}
         </div>
     );
 }
