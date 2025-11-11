@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 
-import Navbar from './components/Navbar';
-import Tabs from './components/Tabs';
-import Sidebar from './components/Sidebar';
-import MapView from './components/MapView';
-import TableView from './components/TableView';
-import AdminPage from './components/AdminPage';
-import LoginPage from './components/LoginPage';
-import Footer from './components/Footer';
+import Navbar from './components/navigation/Navbar';
+import Footer from './components/navigation/Footer';
+import Tabs from './components/app/Tabs';
+import Sidebar from './components/app/Sidebar';
+import MapView from './components/app/MapView';
+import TableView from './components/app/TableView';
+import AdminPage from './components/admin/AdminPage';
+import LoginPage from './components/login/LoginPage';
+
 
 
 

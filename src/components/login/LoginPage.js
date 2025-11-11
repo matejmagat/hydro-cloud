@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../common.css'
 
 function LoginPage() {
     const [username, setUsername] = useState('');
@@ -15,42 +16,26 @@ function LoginPage() {
             <h1>Login</h1>
             <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: '12px' }}>
-                    <label htmlFor="username" style={{ display: 'block', marginBottom: '4px' }}>Username:</label>
+                    <label htmlFor="username">Username:</label>
                     <input
                         id="username"
                         type="text"
                         value={username}
                         onChange={e => setUsername(e.target.value)}
-                        style={{ width: '100%', padding: '8px' }}
                         required
                     />
                 </div>
                 <div style={{ marginBottom: '12px' }}>
-                    <label htmlFor="password" style={{ display: 'block', marginBottom: '4px' }}>Password:</label>
+                    <label htmlFor="password">Password:</label>
                     <input
                         id="password"
                         type="password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
-                        style={{ width: '100%', padding: '8px' }}
                         required
                     />
                 </div>
-                <button
-                    style={{
-                        marginTop: '12px',
-                        width: '100%',
-                        padding: '10px 0',
-                        background: '#fff',
-                        fontWeight: 'bold',
-                        fontSize: '1em',
-                        border: '4px solid #222',
-                        borderRadius: 0,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Login
-                </button>
+                <button> Login </button>
             </form>
         </div>
     );

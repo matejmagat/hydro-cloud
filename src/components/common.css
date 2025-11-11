@@ -1,0 +1,41 @@
+
+input {
+    width: 100%;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 1em;
+    border: 4px solid #222;
+    border-radius: 0;
+    outline: none;
+    box-sizing: border-box;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 1em;
+    border: 4px solid #222;
+    border-radius: 0;
+    outline: none;
+    box-sizing: border-box;
+}
+
+button {
+    margin-top: 12px;
+    width: 100%;
+    padding: 10px 0;
+    background: #fff;
+    font-weight: bold;
+    font-size: 1em;
+    border: 4px solid #222;
+    border-radius: 0;
+    cursor: pointer;
+}
