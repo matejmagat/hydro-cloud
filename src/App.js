@@ -7,13 +7,20 @@ import Tabs from './components/navigation/Tabs';
 import Sidebar from './components/mainView/Sidebar';
 import MapView from './components/mainView/MapView';
 import TableView from './components/mainView/TableView';
+import ChartView from "./components/mainView/ChartView";
 import AdminPage from './components/admin/AdminPage';
 import LoginPage from './components/login/LoginPage';
+
 
 
 function App() {
     const [activeTab, setActiveTab] = useState('map');
     const tabNames = ['map', 'table', 'charts'];
+    const views = {
+        map: <MapView />,
+        table: <TableView />,
+        charts: <ChartView />
+    };
 
     return (
         <Router>
@@ -26,7 +33,7 @@ function App() {
                         <Tabs tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab} />
                         <div className="main-layout" style={{ display: 'flex', height: 'calc(100vh - 100px)' }}>
                             <Sidebar />
-                            {activeTab === 'map' ? <MapView /> : <TableView />}
+                            {views[activeTab] || null}
                         </div>
                     </div>
                 } />
