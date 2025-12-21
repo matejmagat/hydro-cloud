@@ -1,9 +1,11 @@
 package hr.fer.hydro.service.impl;
 
 
+import com.warrenstrange.googleauth.GoogleAuthenticator;
 import hr.fer.hydro.api.auth.AuthResponse;
 import hr.fer.hydro.api.auth.LoginReq;
 import hr.fer.hydro.api.auth.SignUpReq;
+import hr.fer.hydro.api.google2fa.Verify2FAReq;
 import hr.fer.hydro.config.core.UserLocalThread;
 import hr.fer.hydro.db.User2FADao;
 import hr.fer.hydro.db.User2FAScratchCodeDao;
@@ -36,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final AuthMapper authMapper;
     private final PasswordEncoder passwordEncoder;
+    private final GoogleAuthenticator googleAuthenticator;
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -43,8 +46,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public AuthResponse login(LoginReq loginReq) {
-        log.debug("Login attempt for username: {}", loginReq.username());
-
         final UserEntity user = userDao.findByUsername(loginReq.username())
                 .orElseThrow(() -> {
                     log.warn("Login failed: User not found - {}", loginReq.username());
@@ -52,28 +53,20 @@ public class AuthServiceImpl implements AuthService {
                 });
 
         if (!passwordEncoder.matches(loginReq.password(), user.getPassword())) {
-            log.warn("Login failed: Invalid password for user - {}", loginReq.username());
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
-
-        log.info("User logged in successfully: {}", loginReq.username());
         return generateAuthResponse(user);
     }
 
     @Override
     @Transactional
     public AuthResponse signUp(SignUpReq signUpReq) {
-        log.debug("Sign up attempt for username: {}", signUpReq.username());
-
         validateUserDoesNotExist(signUpReq);
 
         final UserEntity newUser = authMapper.toUserEntity(signUpReq);
         newUser.setPassword(passwordEncoder.encode(signUpReq.password()));
 
-        final UserEntity savedUser = userDao.save(newUser);
-        log.info("New user registered successfully: {}", savedUser.getUsername());
-
-        return generateAuthResponseWithAccessAndRefreshToken(savedUser, false);
+        return generateAuthResponseWithAccessToken(userDao.save(newUser), false);
     }
 
     @Override
@@ -85,6 +78,17 @@ public class AuthServiceImpl implements AuthService {
         user2FAScratchCodeDao.deleteAllByUser(user);
     }
 
+    @Override
+    @Transactional
+    public AuthResponse loginVerify2FA(final Verify2FAReq verify2FAReq) {
+        final UserEntity user = userDao.findById(UserLocalThread.getUserId()).orElseThrow();
+        final User2FAEntity user2FAEntity = user2FADao.findByUser(user).orElseThrow();
+        if (googleAuthenticator.authorize(user2FAEntity.getSecret(), verify2FAReq.validationCode())) {
+            return generateAuthResponseWithAccessToken(user, Boolean.TRUE);
+        }
+        return new AuthResponse(null, null,  Boolean.TRUE);
+    }
+
     private UserEntity findUserById(final Integer userId) {
         return userDao.findById(userId).orElseThrow(
                 () -> new EntityNotFoundException("User not found with userId = " + userId)
@@ -92,6 +96,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void validateUserDoesNotExist(SignUpReq signUpReq) {
+        if (userDao.existsByEmail(signUpReq.email())) {
+            log.warn("Sign up failed: Email already exists - {}", signUpReq.email());
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Email already exists"
+            );
+        }
+
         if (userDao.existsByUsername(signUpReq.username())) {
             log.warn("Sign up failed: Username already exists - {}", signUpReq.username());
             throw new ResponseStatusException(
@@ -100,13 +112,6 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        if (userDao.existsByEmail(signUpReq.email())) {
-            log.warn("Sign up failed: Email already exists - {}", signUpReq.email());
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Email already exists"
-            );
-        }
     }
 
     private AuthResponse generateAuthResponse(final UserEntity user) {
@@ -123,14 +128,10 @@ public class AuthServiceImpl implements AuthService {
             }
         }
 
-        return generateAuthResponseWithAccessAndRefreshToken(user, Boolean.FALSE);
+        return generateAuthResponseWithAccessToken(user, Boolean.FALSE);
     }
 
-    private AuthResponse generateAuthResponseWithAccessAndRefreshToken(final UserEntity user, final boolean is2FAEnabled) {
-        return generateAuthResponseWithAccessAndRefreshToken(user, is2FAEnabled, true);
-    }
-
-    private AuthResponse generateAuthResponseWithAccessAndRefreshToken(final UserEntity user, final boolean is2FAEnabled, final Boolean generateNewRefreshToken) {
+    private AuthResponse generateAuthResponseWithAccessToken(final UserEntity user, final boolean is2FAEnabled) {
         final HashMap<String, Object> claims = new HashMap<>();
         claims.put("id", user.getId());
 
