@@ -26,3 +26,6 @@ spring:
       max-file-size: 30MB
       max-request-size: 30MB
 
+jwt:
+  secret-key: 'JzgGlBygnrVqUOnqX833nNu5N8nQfqzhLZ9F9rTxy4G'
+  pending-secret-key: 'g00a1T7emaB0t3SC9l8cLndfLF1as5k2dir9L1UXBLO'

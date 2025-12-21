@@ -1,5 +1,6 @@
 package hr.fer.hydro;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties("jwt")
 public class HydroServiceProperties {
+    @NotNull
     private String secretKey;
-    public String pendingSecretKey;
+    @NotNull
+    private String pendingSecretKey;
 }

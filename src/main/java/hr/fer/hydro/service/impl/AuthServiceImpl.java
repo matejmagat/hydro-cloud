@@ -97,7 +97,6 @@ public class AuthServiceImpl implements AuthService {
 
     private void validateUserDoesNotExist(RegisterReq signUpReq) {
         if (userDao.existsByEmail(signUpReq.email())) {
-            log.warn("Sign up failed: Email already exists - {}", signUpReq.email());
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Email already exists"
@@ -105,7 +104,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (userDao.existsByUsername(signUpReq.username())) {
-            log.warn("Sign up failed: Username already exists - {}", signUpReq.username());
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "Username already exists"
