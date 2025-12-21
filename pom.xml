@@ -35,6 +35,7 @@
 		<dependency.jjwt.version>0.11.5</dependency.jjwt.version>
 		<dependency.google-zxing.version>3.5.4</dependency.google-zxing.version>
 		<dependency.google-auth.version>1.5.0</dependency.google-auth.version>
+		<dependency.swagger.version>2.1.0</dependency.swagger.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -118,6 +119,11 @@
 			<groupId>com.warrenstrange</groupId>
 			<artifactId>googleauth</artifactId>
 			<version>${dependency.google-auth.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${dependency.swagger.version}</version>
 		</dependency>
 
 		<dependency>
