@@ -5,7 +5,10 @@ import hr.fer.hydro.api.auth.AuthResponse;
 import hr.fer.hydro.api.auth.LoginReq;
 import hr.fer.hydro.api.auth.SignUpReq;
 import hr.fer.hydro.config.core.UserLocalThread;
+import hr.fer.hydro.db.User2FADao;
+import hr.fer.hydro.db.User2FAScratchCodeDao;
 import hr.fer.hydro.db.UserDao;
+import hr.fer.hydro.db.entity.User2FAEntity;
 import hr.fer.hydro.db.entity.UserEntity;
 import hr.fer.hydro.mapper.AuthMapper;
 import hr.fer.hydro.service.AuthService;
@@ -28,10 +31,14 @@ import java.util.HashMap;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final UserDao userDao;
+    private final User2FADao user2FADao;
+    private final User2FAScratchCodeDao user2FAScratchCodeDao;
+
+    private final AuthMapper authMapper;
     private final PasswordEncoder passwordEncoder;
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final AuthMapper authMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -74,6 +81,8 @@ public class AuthServiceImpl implements AuthService {
     public void disable2FA() {
         final UserEntity user = findUserById(UserLocalThread.getUserId());
         user.setIs2FAEnabled(Boolean.FALSE);
+        user2FADao.deleteAllByUser(user);
+        user2FAScratchCodeDao.deleteAllByUser(user);
     }
 
     private UserEntity findUserById(final Integer userId) {
@@ -102,13 +111,16 @@ public class AuthServiceImpl implements AuthService {
 
     private AuthResponse generateAuthResponse(final UserEntity user) {
         if (user.getIs2FAEnabled()) {
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-            return AuthResponse.builder()
-                    .accessToken(null)
-                    .pendingToken(jwtService.generatePendingToken(userDetails))
-                    .is2FAEnabled(Boolean.TRUE)
-                    .build();
+            final User2FAEntity user2FA = user2FADao.findByUser(user).orElseThrow();
+            if (user2FA.getConfirmed()) {
+                final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+                return AuthResponse.builder()
+                        .accessToken(null)
+                        .pendingToken(jwtService.generatePendingToken(userDetails))
+                        .is2FAEnabled(Boolean.TRUE)
+                        .build();
 
+            }
         }
 
         return generateAuthResponseWithAccessAndRefreshToken(user, Boolean.FALSE);
