@@ -1,11 +1,11 @@
 package hr.fer.hydro.service.google.auth.impl;
 
 import com.warrenstrange.googleauth.ICredentialRepository;
-import hr.fer.hydro.db.User2FADao;
-import hr.fer.hydro.db.User2FAScratchCodeDao;
-import hr.fer.hydro.db.UserDao;
-import hr.fer.hydro.db.entity.User2FAEntity;
-import hr.fer.hydro.db.entity.UserEntity;
+import hr.fer.hydro.db.auth.repositories.User2FADao;
+import hr.fer.hydro.db.auth.repositories.User2FAScratchCodeDao;
+import hr.fer.hydro.db.auth.repositories.UserDao;
+import hr.fer.hydro.db.auth.entities.User2FAEntity;
+import hr.fer.hydro.db.auth.entities.UserEntity;
 import hr.fer.hydro.mapper.AuthMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

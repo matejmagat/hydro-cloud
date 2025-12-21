@@ -1,9 +1,9 @@
 package hr.fer.hydro.mapper;
 
 import hr.fer.hydro.api.auth.RegisterReq;
-import hr.fer.hydro.db.entity.User2FAEntity;
-import hr.fer.hydro.db.entity.User2FAScratchCodeEntity;
-import hr.fer.hydro.db.entity.UserEntity;
+import hr.fer.hydro.db.auth.entities.User2FAEntity;
+import hr.fer.hydro.db.auth.entities.User2FAScratchCodeEntity;
+import hr.fer.hydro.db.auth.entities.UserEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

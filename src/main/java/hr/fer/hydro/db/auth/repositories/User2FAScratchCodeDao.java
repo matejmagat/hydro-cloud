@@ -1,7 +1,7 @@
-package hr.fer.hydro.db;
+package hr.fer.hydro.db.auth.repositories;
 
-import hr.fer.hydro.db.entity.User2FAScratchCodeEntity;
-import hr.fer.hydro.db.entity.UserEntity;
+import hr.fer.hydro.db.auth.entities.User2FAScratchCodeEntity;
+import hr.fer.hydro.db.auth.entities.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 

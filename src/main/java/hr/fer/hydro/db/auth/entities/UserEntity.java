@@ -1,4 +1,4 @@
-package hr.fer.hydro.db.entity;
+package hr.fer.hydro.db.auth.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;

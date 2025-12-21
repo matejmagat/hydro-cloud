@@ -1,7 +1,7 @@
-package hr.fer.hydro.db;
+package hr.fer.hydro.db.auth.repositories;
 
-import hr.fer.hydro.db.entity.RoleEntity;
-import hr.fer.hydro.db.entity.RolePrivilegeEntity;
+import hr.fer.hydro.db.auth.entities.RoleEntity;
+import hr.fer.hydro.db.auth.entities.RolePrivilegeEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

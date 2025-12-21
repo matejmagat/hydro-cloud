@@ -2,8 +2,8 @@ package hr.fer.hydro.service.impl;
 
 
 import hr.fer.hydro.HydroServiceProperties;
-import hr.fer.hydro.db.UserDao;
-import hr.fer.hydro.db.entity.UserEntity;
+import hr.fer.hydro.db.auth.repositories.UserDao;
+import hr.fer.hydro.db.auth.entities.UserEntity;
 import hr.fer.hydro.enums.JWTType;
 import hr.fer.hydro.service.JwtService;
 import io.jsonwebtoken.*;

@@ -1,4 +1,4 @@
-package hr.fer.hydro.db.entity;
+package hr.fer.hydro.db.auth.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,14 +12,14 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "privilege", schema = "auth")
-public class PrivilegeEntity {
+@Table(name = "role", schema = "auth")
+public class RoleEntity {
     @Id
-    @Column(name = "privilege_id", nullable = false)
+    @Column(name = "role_id", nullable = false)
     private Integer id;
 
-    @Column(name = "privilege_name", nullable = false, length = 32)
-    private String privilegeName;
+    @Column(name = "role_name", nullable = false, length = 32)
+    private String roleName;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

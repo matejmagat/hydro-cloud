@@ -1,4 +1,4 @@
-package hr.fer.hydro.db.entity;
+package hr.fer.hydro.db.auth.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -11,10 +11,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "role_privilege", schema = "auth")
-public class RolePrivilegeEntity {
+@Table(name = "user_role", schema = "auth")
+public class UserRoleEntity {
     @Id
-    @Column(name = "role_privilege_id", nullable = false)
+    @Column(name = "user_role_id", nullable = false)
     private Integer id;
 
     @Column(name = "created_at", nullable = false)
@@ -30,7 +30,7 @@ public class RolePrivilegeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "privilege_id", nullable = false)
-    private PrivilegeEntity privilege;
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
 
 }

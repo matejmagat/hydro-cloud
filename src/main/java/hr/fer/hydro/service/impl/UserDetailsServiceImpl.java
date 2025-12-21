@@ -1,12 +1,12 @@
 package hr.fer.hydro.service.impl;
 
 
-import hr.fer.hydro.db.RolePrivilegeDao;
-import hr.fer.hydro.db.UserDao;
-import hr.fer.hydro.db.UserRoleDao;
-import hr.fer.hydro.db.entity.RolePrivilegeEntity;
-import hr.fer.hydro.db.entity.UserEntity;
-import hr.fer.hydro.db.entity.UserRoleEntity;
+import hr.fer.hydro.db.auth.repositories.RolePrivilegeDao;
+import hr.fer.hydro.db.auth.repositories.UserDao;
+import hr.fer.hydro.db.auth.repositories.UserRoleDao;
+import hr.fer.hydro.db.auth.entities.RolePrivilegeEntity;
+import hr.fer.hydro.db.auth.entities.UserEntity;
+import hr.fer.hydro.db.auth.entities.UserRoleEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;

@@ -1,6 +1,6 @@
-package hr.fer.hydro.db;
+package hr.fer.hydro.db.auth.repositories;
 
-import hr.fer.hydro.db.entity.UserEntity;
+import hr.fer.hydro.db.auth.entities.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
