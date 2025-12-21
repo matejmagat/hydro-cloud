@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: hydro-cloud-db
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: hydro
+      POSTGRES_PASSWORD: hydro
+      POSTGRES_DB: hydro
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - hydro-database:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U hydro -d hydro" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - '5436:5432'
+
+
+volumes:
+  hydro-database:
