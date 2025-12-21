@@ -1,6 +1,6 @@
 package hr.fer.hydro.config.security;
 
-import hr.fer.hydro.config.filters.AddUserLocalFilter;
+import hr.fer.hydro.config.filters.AddCoreUserFilter;
 import hr.fer.hydro.config.filters.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +22,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthenticationProvider authenticationProvider;
-    private final AddUserLocalFilter addUserLocalFilter;
+    private final AddCoreUserFilter addCoreUserFilter;
     @Bean
     public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
         return http
@@ -36,7 +36,7 @@ public class SecurityConfig {
                 )
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(addUserLocalFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(addCoreUserFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 }

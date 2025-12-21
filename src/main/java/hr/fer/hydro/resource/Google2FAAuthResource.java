@@ -2,7 +2,7 @@ package hr.fer.hydro.resource;
 
 import hr.fer.hydro.api.auth.AuthResponse;
 import hr.fer.hydro.api.google2fa.QRCode;
-import hr.fer.hydro.api.google2fa.Verify2FA;
+import hr.fer.hydro.api.google2fa.Verify2FAResult;
 import hr.fer.hydro.api.google2fa.Verify2FAReq;
 import hr.fer.hydro.service.AuthService;
 import hr.fer.hydro.service.google.auth.GoogleAuthService;
@@ -29,7 +29,7 @@ public class Google2FAAuthResource {
     }
 
     @PostMapping("/:verify")
-    public ResponseEntity<Verify2FA> activate2FA(@RequestBody Verify2FAReq verify2FAReq) {
+    public ResponseEntity<Verify2FAResult> activate2FA(@RequestBody Verify2FAReq verify2FAReq) {
         return ResponseEntity.ok(googleAuthService.verify2FA(verify2FAReq));
     }
 

@@ -2,7 +2,7 @@ package hr.fer.hydro.resource;
 
 import hr.fer.hydro.api.auth.AuthResponse;
 import hr.fer.hydro.api.auth.LoginReq;
-import hr.fer.hydro.api.auth.SignUpReq;
+import hr.fer.hydro.api.auth.RegisterReq;
 import hr.fer.hydro.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class AuthResource {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<AuthResponse> signUp(final @Valid @RequestBody SignUpReq signUpReq) {
+    public ResponseEntity<AuthResponse> signUp(final @Valid @RequestBody RegisterReq signUpReq) {
         return ResponseEntity.ok(authService.signUp(signUpReq));
     }
 }

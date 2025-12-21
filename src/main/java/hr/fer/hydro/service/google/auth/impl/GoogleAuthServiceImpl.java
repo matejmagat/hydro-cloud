@@ -9,9 +9,9 @@ import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
 import hr.fer.hydro.api.google2fa.QRCode;
-import hr.fer.hydro.api.google2fa.Verify2FA;
+import hr.fer.hydro.api.google2fa.Verify2FAResult;
 import hr.fer.hydro.api.google2fa.Verify2FAReq;
-import hr.fer.hydro.config.core.UserLocalThread;
+import hr.fer.hydro.config.core.UserCoreLocalThread;
 import hr.fer.hydro.db.User2FADao;
 import hr.fer.hydro.db.User2FAScratchCodeDao;
 import hr.fer.hydro.db.UserDao;
@@ -46,7 +46,7 @@ public class GoogleAuthServiceImpl implements GoogleAuthService {
     @Override
     @Transactional
     public QRCode activate2FA() {
-        final UserEntity user = userDao.findById(UserLocalThread.getUserId()).orElseThrow(() -> new EntityNotFoundException("User not found by id = {}" + UserLocalThread.getUserId()));
+        final UserEntity user = userDao.findById(UserCoreLocalThread.getUserId()).orElseThrow(() -> new EntityNotFoundException("User not found by id = {}" + UserCoreLocalThread.getUserId()));
         try {
             final GoogleAuthenticatorKey key = googleAuthenticator.createCredentials(user.getUsername());
             final String secret = key.getKey();
@@ -63,19 +63,19 @@ public class GoogleAuthServiceImpl implements GoogleAuthService {
 
     @Override
     @Transactional
-    public Verify2FA verify2FA(final Verify2FAReq verify2FAReq) {
-        final UserEntity user = userDao.findById(UserLocalThread.getUserId())
+    public Verify2FAResult verify2FA(final Verify2FAReq verify2FAReq) {
+        final UserEntity user = userDao.findById(UserCoreLocalThread.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         final String secretKey = googleAuthenticator.getCredentialRepository().getSecretKey(user.getUsername());
-        if (verify2FAReq.validationCode() != null && googleAuthenticator.authorize(secretKey, verify2FAReq.validationCode())) {
+        if (verify2FAReq.code() != null && googleAuthenticator.authorize(secretKey, verify2FAReq.code())) {
             user2FADao.findByUser(user).ifPresent(user2FAEntity -> user2FAEntity.setConfirmed(Boolean.TRUE));
             user.setIs2FAEnabled(Boolean.TRUE);
-            return new Verify2FA(
+            return new Verify2FAResult(
                     user2FAScratchCodeDao.findAllByUser(user).stream().map(User2FAScratchCodeEntity::getCode).toList()
             );
         }
-        return new Verify2FA(Collections.emptyList());
+        return new Verify2FAResult(Collections.emptyList());
     }
 
     private static QRCode generateQRBase64(final String qrCodeText) throws Exception {

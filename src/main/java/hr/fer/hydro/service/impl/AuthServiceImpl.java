@@ -4,9 +4,9 @@ package hr.fer.hydro.service.impl;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import hr.fer.hydro.api.auth.AuthResponse;
 import hr.fer.hydro.api.auth.LoginReq;
-import hr.fer.hydro.api.auth.SignUpReq;
+import hr.fer.hydro.api.auth.RegisterReq;
 import hr.fer.hydro.api.google2fa.Verify2FAReq;
-import hr.fer.hydro.config.core.UserLocalThread;
+import hr.fer.hydro.config.core.UserCoreLocalThread;
 import hr.fer.hydro.db.User2FADao;
 import hr.fer.hydro.db.User2FAScratchCodeDao;
 import hr.fer.hydro.db.UserDao;
@@ -60,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse signUp(SignUpReq signUpReq) {
+    public AuthResponse signUp(RegisterReq signUpReq) {
         validateUserDoesNotExist(signUpReq);
 
         final UserEntity newUser = authMapper.toUserEntity(signUpReq);
@@ -72,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void disable2FA() {
-        final UserEntity user = findUserById(UserLocalThread.getUserId());
+        final UserEntity user = findUserById(UserCoreLocalThread.getUserId());
         user.setIs2FAEnabled(Boolean.FALSE);
         user2FADao.deleteAllByUser(user);
         user2FAScratchCodeDao.deleteAllByUser(user);
@@ -81,9 +81,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse loginVerify2FA(final Verify2FAReq verify2FAReq) {
-        final UserEntity user = userDao.findById(UserLocalThread.getUserId()).orElseThrow();
+        final UserEntity user = userDao.findById(UserCoreLocalThread.getUserId()).orElseThrow();
         final User2FAEntity user2FAEntity = user2FADao.findByUser(user).orElseThrow();
-        if (googleAuthenticator.authorize(user2FAEntity.getSecret(), verify2FAReq.validationCode())) {
+        if (googleAuthenticator.authorize(user2FAEntity.getSecret(), verify2FAReq.code())) {
             return generateAuthResponseWithAccessToken(user, Boolean.TRUE);
         }
         return new AuthResponse(null, null,  Boolean.TRUE);
@@ -95,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
-    private void validateUserDoesNotExist(SignUpReq signUpReq) {
+    private void validateUserDoesNotExist(RegisterReq signUpReq) {
         if (userDao.existsByEmail(signUpReq.email())) {
             log.warn("Sign up failed: Email already exists - {}", signUpReq.email());
             throw new ResponseStatusException(

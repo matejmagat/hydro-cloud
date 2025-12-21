@@ -11,12 +11,11 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "user_2fa", schema = "user_management")
+@Table(name = "user_2fa", schema = "auth")
 public class User2FAEntity {
     @Id
     @Column(name = "user_2fa_id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_2fa_id_gen")
-    @SequenceGenerator(name = "user_2fa_id_gen", sequenceName = "users_2fa_seq")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @NotNull

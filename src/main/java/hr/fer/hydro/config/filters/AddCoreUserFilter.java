@@ -1,6 +1,6 @@
 package hr.fer.hydro.config.filters;
 
-import hr.fer.hydro.config.core.UserLocalThread;
+import hr.fer.hydro.config.core.UserCoreLocalThread;
 import hr.fer.hydro.enums.JWTType;
 import hr.fer.hydro.service.JwtService;
 import jakarta.servlet.FilterChain;
@@ -17,7 +17,7 @@ import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
-public class AddUserLocalFilter extends OncePerRequestFilter {
+public class AddCoreUserFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
     @Override
@@ -44,8 +44,8 @@ public class AddUserLocalFilter extends OncePerRequestFilter {
             case PENDING -> jwtService.extractUserIdFromPendingToken(jwt);
         };
 
-        UserLocalThread.setUserInfo(userId);
+        UserCoreLocalThread.setUserInfo(userId);
         filterChain.doFilter(request, response);
-        UserLocalThread.deleteUserInfo();
+        UserCoreLocalThread.deleteUserInfo();
     }
 }
