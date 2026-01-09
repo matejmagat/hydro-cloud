@@ -10,6 +10,7 @@ import TableView from './components/mainView/TableView';
 import ChartView from "./components/mainView/ChartView";
 import AdminPage from './components/admin/AdminPage';
 import LoginPage from './components/login/LoginPage';
+import RegisterPage from "./components/login/RegisterPage";
 
 
 
@@ -28,6 +29,7 @@ function App() {
             <Routes>
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
                 <Route path="/" element={
                     <div className="app-container">
                         <Tabs tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab} />
