@@ -20,6 +20,5 @@ services:
     ports:
       - '5436:5432'
 
-
 volumes:
   hydro-database:

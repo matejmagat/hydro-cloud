@@ -1,0 +1,42 @@
+package hr.fer.hydro.cloud.entities;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.locationtech.jts.geom.Point;
+
+import java.time.OffsetDateTime;
+
+@Getter
+@Setter
+@Entity
+@NoArgsConstructor
+public class Station {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long id;
+
+    @Column(nullable = false, length = 32)
+    private String name;
+
+    @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
+    private Point location;
+
+    @Column(nullable = false)
+    private OffsetDateTime activeFrom;
+
+    @Column(nullable = false)
+    private OffsetDateTime activeTo;
+
+    public Station(String name,
+                   Point location,
+                   OffsetDateTime activeFrom,
+                   OffsetDateTime activeTo) {
+        this.name = name;
+        this.location = location;
+        this.activeFrom = activeFrom;
+        this.activeTo = activeTo;
+    }
+}
