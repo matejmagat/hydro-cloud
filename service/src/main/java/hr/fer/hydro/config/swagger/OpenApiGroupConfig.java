@@ -6,9 +6,20 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenApiGroupConfig {
+
+    @Bean
+    public GroupedOpenApi allOpenApi() {
+        final String[] paths = {"/**"};
+        return GroupedOpenApi
+                .builder()
+                .group("*")
+                .pathsToMatch(paths)
+                .build();
+    }
+
     @Bean
     public GroupedOpenApi authOpenApi() {
-        final String[] paths =  {"/auth/**", "/google-2fa/**"};
+        final String[] paths = {"/auth/**", "/google-2fa/**"};
         return GroupedOpenApi
                 .builder()
                 .group("Auth")
@@ -17,11 +28,11 @@ public class OpenApiGroupConfig {
     }
 
     @Bean
-    public GroupedOpenApi allOpenApi() {
-        final String[] paths =  {"/**"};
+    public GroupedOpenApi stationsOpenApi() {
+        final String[] paths = {"/stations/**"};
         return GroupedOpenApi
                 .builder()
-                .group("*")
+                .group("Stations")
                 .pathsToMatch(paths)
                 .build();
     }

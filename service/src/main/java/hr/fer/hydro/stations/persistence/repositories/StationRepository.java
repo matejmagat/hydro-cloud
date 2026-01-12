@@ -1,6 +1,6 @@
-package hr.fer.hydro.cloud.repositories;
+package hr.fer.hydro.stations.persistence.repositories;
 
-import hr.fer.hydro.cloud.entities.Station;
+import hr.fer.hydro.stations.persistence.entities.Station;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface StationRepository extends JpaRepository<Station, Long> {

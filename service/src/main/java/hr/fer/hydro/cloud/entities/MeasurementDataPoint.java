@@ -1,5 +1,6 @@
 package hr.fer.hydro.cloud.entities;
 
+import hr.fer.hydro.stations.persistence.entities.Station;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

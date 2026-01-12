@@ -1,4 +1,4 @@
-package hr.fer.hydro.cloud.entities;
+package hr.fer.hydro.stations.persistence.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -14,8 +14,13 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 public class Station {
 
+    @SequenceGenerator(
+            name = "station_seq",
+            sequenceName = "station_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "station_seq")
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Column(nullable = false, length = 32)
