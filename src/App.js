@@ -11,7 +11,8 @@ import ChartView from "./components/mainView/ChartView";
 import AdminPage from './components/admin/AdminPage';
 import LoginPage from './components/login/LoginPage';
 import RegisterPage from "./components/login/RegisterPage";
-
+import ProfilePage from "./components/login/ProfilePage";
+import Verify2FAPage from "./components/login/Verify2FAPage";
 
 
 function App() {
@@ -30,6 +31,8 @@ function App() {
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/verify-2fa" element={<Verify2FAPage />} />
                 <Route path="/" element={
                     <div className="app-container">
                         <Tabs tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab} />

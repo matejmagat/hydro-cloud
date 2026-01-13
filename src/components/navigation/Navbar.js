@@ -1,16 +1,29 @@
-import React from 'react';
-import './navigation.css'
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import './navigation.css';
 
 function Navbar() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const location = useLocation();
+
+    useEffect(() => {
+        const token = localStorage.getItem('authToken');
+        setIsLoggedIn(!!token);
+    }, [location]);
+
     return (
         <nav className="navbar">
-            <a href="/" className="logo">
+            <Link to="/" className="logo">
                 Hydrological Information WebApp
-            </a>
+            </Link>
             <div>
-                <a href="/" className="link">home</a>
-                <a href="/admin" className="link">admin</a>
-                <a href="/login" className="link">login</a>
+                <Link to="/" className="link">home</Link>
+                <Link to="/admin" className="link">admin</Link>
+                {isLoggedIn ? (
+                    <Link to="/profile" className="link">profile</Link>
+                ) : (
+                    <Link to="/login" className="link">login</Link>
+                )}
             </div>
         </nav>
     );
