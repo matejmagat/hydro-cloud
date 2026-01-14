@@ -32,15 +32,23 @@ function RegisterPage() {
                 }),
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get('content-type') || '';
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Registration failed');
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Registered successfully:', data);
+                localStorage.setItem('authToken', data["accessToken"]);
+                navigate('/');
+            } else {
+                if (contentType === 'application/json') {
+                    const data = await response.json();
+                    const error_message = Object.values(data)[0];
+                    throw new Error(error_message);
+                } else {
+                    throw new Error("Registration failed");
+                }
             }
 
-            console.log('Registered successfully:', data);
-            localStorage.setItem('authToken', data["accessToken"]);
-            navigate('/');
         } catch (err) {
             console.error(err);
             setError(err.message || 'Something went wrong');

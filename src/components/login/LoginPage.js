@@ -26,21 +26,30 @@ function LoginPage() {
                 }),
             });
 
-            const data = await response.json();
+            const contentType = response.headers.get('content-type') || '';
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Login failed');
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Logged in:', data["accessToken"]);
+
+                if (data.is2FAEnabled && data.pendingToken) {
+                    localStorage.setItem('pendingToken', data.pendingToken);
+                    navigate('/verify-2fa');
+                } else if (data.accessToken) {
+                    localStorage.setItem('authToken', data.accessToken);
+                    navigate('/');
+                }
+            } else {
+                if (contentType === 'application/json') {
+                    const data = await response.json();
+                    const error_message = Object.values(data)[0];
+                    throw new Error(error_message);
+                } else {
+                    throw new Error("Login failed");
+                }
             }
 
-            console.log('Logged in:', data["accessToken"]);
-            
-            if (data.is2FAEnabled && data.pendingToken) {
-                localStorage.setItem('pendingToken', data.pendingToken);
-                navigate('/verify-2fa');
-            } else if (data.accessToken) {
-                localStorage.setItem('authToken', data.accessToken);
-                navigate('/');
-            }
+
         } catch (err) {
             console.error(err);
             setError(err.message || 'Something went wrong');
