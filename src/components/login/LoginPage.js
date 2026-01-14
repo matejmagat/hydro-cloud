@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import '../common.css'
+import { Link, useNavigate } from 'react-router-dom';
+import '../common.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -8,6 +8,7 @@ function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -25,18 +26,21 @@ function LoginPage() {
                 }),
             });
 
-            // If your API returns JSON:
             const data = await response.json();
 
             if (!response.ok) {
-                // Adjust according to your API error shape
                 throw new Error(data.message || 'Login failed');
-                // alert(data.message || 'Login failed')
             }
 
-            // Handle successful login here
             console.log('Logged in:', data["accessToken"]);
-            localStorage.setItem('authToken', data["accessToken"]);
+            
+            if (data.is2FAEnabled && data.pendingToken) {
+                localStorage.setItem('pendingToken', data.pendingToken);
+                navigate('/verify-2fa');
+            } else if (data.accessToken) {
+                localStorage.setItem('authToken', data.accessToken);
+                navigate('/');
+            }
         } catch (err) {
             console.error(err);
             setError(err.message || 'Something went wrong');
@@ -77,7 +81,7 @@ function LoginPage() {
                 <button type="submit">Login</button>
             </form>
             <p style={{ marginTop: '12px' }}>
-                Don&apos;t have an account?{' '}
+                Don't have an account?{' '}
                 <Link to="/register">Register</Link>
             </p>
         </div>

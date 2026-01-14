@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../common.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -11,6 +11,7 @@ function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -39,6 +40,7 @@ function RegisterPage() {
 
             console.log('Registered successfully:', data);
             localStorage.setItem('authToken', data["accessToken"]);
+            navigate('/');
         } catch (err) {
             console.error(err);
             setError(err.message || 'Something went wrong');
