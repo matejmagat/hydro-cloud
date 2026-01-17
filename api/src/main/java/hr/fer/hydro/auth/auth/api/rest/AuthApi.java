@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping(value = "/auth")
 public interface AuthApi {
 
-    @Operation(summary = "Prijava korisnika", description = "Vraća JWT token ako su podaci ispravni")
+    @Operation(summary = "Prijava korisnika")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Uspješna prijava.",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),

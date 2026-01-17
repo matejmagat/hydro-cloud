@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://aws-1-eu-west-2.pooler.supabase.com:5432/postgres?sslmode=require&prepareThreshold=0
+    username: postgres.tkhuamwgokiyttmflaxp
+    password: 'acWxdRBmAzUXHzi8'
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        ddl-auto: create
+        jdbc:
+          batch_size: 0

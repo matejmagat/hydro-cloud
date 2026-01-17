@@ -9,6 +9,7 @@ import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
 import hr.fer.hydro.auth.google2fa.dto.QRCode;
+import hr.fer.hydro.auth.google2fa.dto.Status2FA;
 import hr.fer.hydro.auth.google2fa.dto.Verify2FAReq;
 import hr.fer.hydro.auth.google2fa.dto.Verify2FAResult;
 import hr.fer.hydro.auth.google2fa.service.GoogleAuthService;
@@ -76,6 +77,16 @@ public class GoogleAuthServiceImpl implements GoogleAuthService {
             );
         }
         return new Verify2FAResult(Collections.emptyList());
+    }
+
+    @Override
+    public Status2FA get2FAStatus() {
+        Integer userId = UserCoreLocalThread.getUserId();
+
+        UserEntity user = userDao.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        return new Status2FA(user.getIs2FAEnabled());
     }
 
     private static QRCode generateQRBase64(final String qrCodeText) throws Exception {

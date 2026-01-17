@@ -4,6 +4,7 @@ import hr.fer.hydro.auth.auth.dto.AuthResponse;
 import hr.fer.hydro.auth.auth.service.AuthService;
 import hr.fer.hydro.auth.google2fa.api.rest.Google2FAApi;
 import hr.fer.hydro.auth.google2fa.dto.QRCode;
+import hr.fer.hydro.auth.google2fa.dto.Status2FA;
 import hr.fer.hydro.auth.google2fa.dto.Verify2FAReq;
 import hr.fer.hydro.auth.google2fa.dto.Verify2FAResult;
 import hr.fer.hydro.auth.google2fa.service.GoogleAuthService;
@@ -35,5 +36,10 @@ public class Google2FAController implements Google2FAApi {
     @Override
     public ResponseEntity<AuthResponse> loginVerify2FA(Verify2FAReq verify2FAReq) {
         return ResponseEntity.ok(authService.loginVerify2FA(verify2FAReq));
+    }
+
+    @Override
+    public ResponseEntity<Status2FA> get2FAStatus() {
+        return ResponseEntity.ok(googleAuthService.get2FAStatus());
     }
 }

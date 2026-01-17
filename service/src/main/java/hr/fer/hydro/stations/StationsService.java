@@ -4,15 +4,16 @@ import hr.fer.hydro.stations.dto.StationRequestDto;
 import hr.fer.hydro.stations.dto.StationResponseDto;
 import hr.fer.hydro.stations.persistence.entities.Station;
 import hr.fer.hydro.stations.persistence.repositories.StationRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -28,7 +29,10 @@ public class StationsService {
 
     public List<StationResponseDto> getStations() {
         List<Station> stations = stationRepository.findAll();
-        return stations.stream().map(dataMapper::toStationResponseDto).toList();
+
+        return stations.stream()
+                .map(dataMapper::toStationResponseDto)
+                .toList();
     }
 
     @Transactional
@@ -53,15 +57,16 @@ public class StationsService {
         Optional<Station> station = stationRepository.findById(stationId);
 
         return station.map(dataMapper::toStationResponseDto)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Station with stationId " + stationId + " not found"
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Station with stationId " + stationId + " not found"
                 ));
     }
 
+    @Transactional
     public void deleteStation(Long stationId) {
         if (!stationRepository.existsById(stationId)) {
-            throw new EntityNotFoundException(
-                    "Station with stationId " + stationId + " not found"
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Station with stationId " + stationId + " not found"
             );
         }
         stationRepository.deleteById(stationId);
