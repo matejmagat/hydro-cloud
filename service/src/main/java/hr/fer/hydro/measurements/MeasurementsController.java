@@ -1,0 +1,42 @@
+package hr.fer.hydro.measurements;
+
+import hr.fer.hydro.measurements.api.rest.MeasurementsApi;
+import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
+import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@Slf4j
+@RestController
+@RequiredArgsConstructor
+public class MeasurementsController implements MeasurementsApi {
+
+    private final MeasurementsService measurementsService;
+
+    @Override
+    public ResponseEntity<List<MeasurementResponseDto>> getMeasurements(Long stationId, Long typeId) {
+        return ResponseEntity
+                .ok(measurementsService.getMeasurements(stationId, typeId));
+    }
+
+    @Override
+    public ResponseEntity<MeasurementResponseDto> createMeasurement(MeasurementRequestDto measurementRequestDto) {
+        return ResponseEntity
+                .ok(measurementsService.createMeasurement(measurementRequestDto));
+    }
+
+    @Override
+    public ResponseEntity<MeasurementResponseDto> getMeasurement(Long measurementId) {
+        return ResponseEntity
+                .ok(measurementsService.getMeasurement(measurementId));
+    }
+
+    @Override
+    public void deleteMeasurement(Long measurementId) {
+        measurementsService.deleteMeasurement(measurementId);
+    }
+}

@@ -27,6 +27,7 @@ public interface StationsApi {
             @ApiResponse(responseCode = "200", description = "Popis meteoroloških stanica uspješno dohvaćen.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             array = @ArraySchema(schema = @Schema(implementation = StationResponseDto.class)))),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
             @ApiResponse(responseCode = "403", description = "Zabranjen pristup.")
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,6 +53,7 @@ public interface StationsApi {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = StationResponseDto.class))
             ),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
             @ApiResponse(responseCode = "403", description = "Zabranjen pristup."),
             @ApiResponse(responseCode = "404", description = "Meteorološka stanica s danim ID-jem ne postoji.")
     })
@@ -64,6 +66,7 @@ public interface StationsApi {
     @Operation(summary = "Obriši meteorološku stanicu po ID-u")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Meteorološka stanica uspješno obrisana."),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
             @ApiResponse(responseCode = "403", description = "Zabranjen pristup."),
             @ApiResponse(responseCode = "404", description = "Meteorološka stanica s danim ID-jem ne postoji.")
 

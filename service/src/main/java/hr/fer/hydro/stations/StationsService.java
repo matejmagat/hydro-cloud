@@ -1,5 +1,6 @@
 package hr.fer.hydro.stations;
 
+import hr.fer.hydro.DataMapper;
 import hr.fer.hydro.stations.dto.StationRequestDto;
 import hr.fer.hydro.stations.dto.StationResponseDto;
 import hr.fer.hydro.stations.persistence.entities.Station;

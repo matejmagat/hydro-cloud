@@ -1,4 +1,4 @@
-package hr.fer.hydro.cloud.entities;
+package hr.fer.hydro.measurements.persistence.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;

@@ -36,4 +36,14 @@ public class OpenApiGroupConfig {
                 .pathsToMatch(paths)
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi measurementsOpenApi() {
+        final String[] paths = {"/measurements/**"};
+        return GroupedOpenApi
+                .builder()
+                .group("Measurements")
+                .pathsToMatch(paths)
+                .build();
+    }
 }
