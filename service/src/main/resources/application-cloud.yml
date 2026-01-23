@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://bhw3pk18ul.daaas0f3b5.tsdb.cloud.timescale.com:32794/tsdb?sslmode=require
+    username: tsdbadmin
+    password: 'u229d53g6hyclm38'
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        ddl-auto: create
+        jdbc:
+          batch_size: 0

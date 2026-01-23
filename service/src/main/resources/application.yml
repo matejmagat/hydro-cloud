@@ -1,0 +1,28 @@
+server:
+  servlet:
+    context-path: /api
+    encoding:
+      charset: UTF-8
+  port: 8081
+  error:
+    include-stacktrace: never
+
+spring:
+  profiles:
+    active: cloud
+  jpa:
+    database: POSTGRESQL
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 30MB
+      max-request-size: 30MB
+
+jwt:
+  secret-key: 'JzgGlBygnrVqUOnqX833nNu5N8nQfqzhLZ9F9rTxy4G'
+  pending-secret-key: 'g00a1T7emaB0t3SC9l8cLndfLF1as5k2dir9L1UXBLO'
