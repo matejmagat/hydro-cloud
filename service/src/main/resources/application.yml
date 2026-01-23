@@ -8,6 +8,8 @@ server:
     include-stacktrace: never
 
 spring:
+  profiles:
+    active: cloud
   jpa:
     database: POSTGRESQL
     show-sql: false

@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://aws-1-eu-west-2.pooler.supabase.com:5432/postgres?sslmode=require&prepareThreshold=0
-    username: postgres.tkhuamwgokiyttmflaxp
-    password: 'acWxdRBmAzUXHzi8'
+    url: jdbc:postgresql://bhw3pk18ul.daaas0f3b5.tsdb.cloud.timescale.com:32794/tsdb?sslmode=require
+    username: tsdbadmin
+    password: 'u229d53g6hyclm38'
     driver-class-name: org.postgresql.Driver
 
   jpa:
