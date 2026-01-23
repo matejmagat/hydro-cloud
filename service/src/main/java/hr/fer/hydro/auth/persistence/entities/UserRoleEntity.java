@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "user_role", schema = "auth")
+@Table(name = "user_role")
 public class UserRoleEntity {
     @Id
     @Column(name = "user_role_id", nullable = false)

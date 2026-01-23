@@ -1,6 +1,7 @@
 package hr.fer.hydro.measurements.persistence.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -9,11 +10,18 @@ import java.time.OffsetDateTime;
 
 @Getter
 @Entity
+@Table(name = "measurement_value")
 @NoArgsConstructor
+@AllArgsConstructor
 public class MeasurementValue {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(
+            name = "measurement_value",
+            sequenceName = "measurement_value_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "measurement_value")
     private Long id;
 
     @Column(nullable = false)

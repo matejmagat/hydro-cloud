@@ -1,6 +1,7 @@
 package hr.fer.hydro.stations.persistence.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,7 +12,9 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @Entity
+@Table(name = "station")
 @NoArgsConstructor
+@AllArgsConstructor
 public class Station {
 
     @SequenceGenerator(

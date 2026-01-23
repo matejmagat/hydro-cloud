@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "user_2fa_scratch_code", schema = "auth")
+@Table(name = "user_2fa_scratch_code")
 public class User2FAScratchCodeEntity {
     @Id
     @Column(name = "user_2fa_scratch_code_id", nullable = false)

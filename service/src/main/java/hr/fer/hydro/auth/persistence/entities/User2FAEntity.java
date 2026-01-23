@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "user_2fa", schema = "auth")
+@Table(name = "user_2fa")
 public class User2FAEntity {
     @Id
     @Column(name = "user_2fa_id", nullable = false)
