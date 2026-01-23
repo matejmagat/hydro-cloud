@@ -1,4 +1,4 @@
-package hr.fer.hydro.auth.auth;
+package hr.fer.hydro.auth.auth.controller;
 
 import hr.fer.hydro.auth.auth.api.rest.AuthApi;
 import hr.fer.hydro.auth.auth.dto.AuthResponse;
