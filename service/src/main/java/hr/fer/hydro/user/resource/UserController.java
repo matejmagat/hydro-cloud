@@ -17,25 +17,25 @@ import java.util.List;
 public class UserController implements UserApi {
     private final UserService userService;
     @Override
-    @PreAuthorize("hasRole('DELETE_USER')")
+    @PreAuthorize("hasAuthority('USER_DELETE')")
     public void deleteUser(Integer userId) {
         userService.deleteUser(userId);
     }
 
     @Override
-    @PreAuthorize("hasRole('USER_UPDATE')")
+    @PreAuthorize("hasAuthority('USER_UPDATE')")
     public ResponseEntity<UserDetailInfoDto> updateUser(UpdateUserReq updateUserReq) {
         return ResponseEntity.ok(userService.updateUser(updateUserReq));
     }
 
     @Override
-    @PreAuthorize("hasRole('USER_READ')")
+    @PreAuthorize("hasAuthority('USER_READ')")
     public ResponseEntity<UserDetailInfoDto> getDetailedUserInfo(Integer userId) {
         return ResponseEntity.ok(userService.getUserInfo(userId));
     }
 
     @Override
-    @PreAuthorize("hasRole('ALL_USER_READ')")
+    @PreAuthorize("hasAuthority('ALL_USER_READ')")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }

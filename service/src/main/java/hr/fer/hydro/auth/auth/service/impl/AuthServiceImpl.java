@@ -4,15 +4,15 @@ import com.warrenstrange.googleauth.GoogleAuthenticator;
 import hr.fer.hydro.auth.auth.dto.AuthResponse;
 import hr.fer.hydro.auth.auth.dto.LoginReq;
 import hr.fer.hydro.auth.auth.dto.RegisterReq;
+import hr.fer.hydro.auth.auth.enums.Role;
 import hr.fer.hydro.auth.auth.service.AuthService;
 import hr.fer.hydro.auth.auth.service.JwtService;
 import hr.fer.hydro.auth.google2fa.dto.Verify2FAReq;
 import hr.fer.hydro.auth.mapper.AuthMapper;
 import hr.fer.hydro.auth.persistence.entities.User2FAEntity;
 import hr.fer.hydro.auth.persistence.entities.UserEntity;
-import hr.fer.hydro.auth.persistence.repositories.User2FADao;
-import hr.fer.hydro.auth.persistence.repositories.User2FAScratchCodeDao;
-import hr.fer.hydro.auth.persistence.repositories.UserDao;
+import hr.fer.hydro.auth.persistence.entities.UserRoleEntity;
+import hr.fer.hydro.auth.persistence.repositories.*;
 import hr.fer.hydro.config.core.UserCoreLocalThread;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +25,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+    private final RoleDao roleDao;
     private final UserDao userDao;
     private final User2FADao user2FADao;
+    private final UserRoleDao userRoleDao;
     private final User2FAScratchCodeDao user2FAScratchCodeDao;
 
     private final AuthMapper authMapper;
@@ -62,10 +65,20 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse signUp(RegisterReq signUpReq) {
         validateUserDoesNotExist(signUpReq);
 
-        final UserEntity newUser = authMapper.toUserEntity(signUpReq);
+        UserEntity newUser = authMapper.toUserEntity(signUpReq);
         newUser.setPassword(passwordEncoder.encode(signUpReq.password()));
+        newUser = userDao.save(newUser);
+        addUserRole(newUser);
 
-        return generateAuthResponseWithAccessToken(userDao.save(newUser), false);
+        return generateAuthResponseWithAccessToken(newUser, false);
+    }
+
+    private void addUserRole(UserEntity newUser) {
+        final UserRoleEntity userRoleEntity = new UserRoleEntity();
+        userRoleEntity.setUser(newUser);
+        userRoleEntity.setRole(roleDao.findByRoleName(Role.USER.name()).orElseThrow());
+        userRoleEntity.setCreatedAt(LocalDateTime.now());
+        userRoleDao.save(userRoleEntity);
     }
 
     @Override

@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -45,19 +46,22 @@ class AuthResourceIntegrationTest {
 
     @Container
     @ServiceConnection
-    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withInitScript("init-schema.sql");
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+            DockerImageName.parse("postgis/postgis:15-3.3")
+                    .asCompatibleSubstituteFor("postgres")
+    );
+
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
         registry.add("spring.sql.init.mode", () -> "always");
-        registry.add("spring.sql.init.schema-locations", () -> "classpath:init-schema.sql");
+        registry.add("spring.jpa.defer-datasource-initialization", () -> "true");
+        registry.add("spring.sql.init.data-locations", () -> "classpath:data.sql");
     }
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -215,7 +219,7 @@ class AuthResourceIntegrationTest {
             UserEntity registeredUser = userRepository.findByUsername("mbarisic").orElseThrow();
             UserCoreLocalThread.setUserInfo(registeredUser.getId());
 
-            mockMvc.perform(post("/google-2fa/:activate")
+            mockMvc.perform(post("/google-2fa/activate")
                             .header("Authorization", "Bearer " + authTokens.accessToken())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
@@ -251,7 +255,7 @@ class AuthResourceIntegrationTest {
             int validTotpCode = totpGenerator.getTotpPassword(twoFactorConfig.getSecret());
             Verify2FAReq verificationPayload = new Verify2FAReq(validTotpCode);
 
-            mockMvc.perform(post("/google-2fa/:verify")
+            mockMvc.perform(post("/google-2fa/verify")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("Authorization", "Bearer " + authToken)
                             .content(jsonMapper.writeValueAsString(verificationPayload)))
@@ -279,7 +283,7 @@ class AuthResourceIntegrationTest {
 
             Verify2FAReq invalidVerification = new Verify2FAReq(123456);
 
-            mockMvc.perform(post("/google-2fa/:verify")
+            mockMvc.perform(post("/google-2fa/verify")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("Authorization", "Bearer " + authToken)
                             .content(jsonMapper.writeValueAsString(invalidVerification)))
@@ -306,7 +310,7 @@ class AuthResourceIntegrationTest {
 
             String nullCodePayload = "{\"validationCode\": null}";
 
-            mockMvc.perform(post("/google-2fa/:verify")
+            mockMvc.perform(post("/google-2fa/verify")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("Authorization", "Bearer " + authToken)
                             .content(nullCodePayload))
@@ -336,7 +340,7 @@ class AuthResourceIntegrationTest {
             int currentTotpCode = totpGenerator.getTotpPassword(twoFactorConfig.getSecret());
             Verify2FAReq verificationPayload = new Verify2FAReq(currentTotpCode);
 
-            mockMvc.perform(post("/google-2fa/login/:verify")
+            mockMvc.perform(post("/google-2fa/login/verify")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("Authorization", "Bearer " + temporaryToken)
                             .content(jsonMapper.writeValueAsString(verificationPayload)))
@@ -359,7 +363,7 @@ class AuthResourceIntegrationTest {
 
             Verify2FAReq invalidVerification = new Verify2FAReq(0);
 
-            mockMvc.perform(post("/google-2fa/login/:verify")
+            mockMvc.perform(post("/google-2fa/login/verify")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("Authorization", "Bearer " + temporaryToken)
                             .content(jsonMapper.writeValueAsString(invalidVerification)))
@@ -381,7 +385,7 @@ class AuthResourceIntegrationTest {
             ).pendingToken();
 
             // First failed attempt
-            mockMvc.perform(post("/google-2fa/login/:verify")
+            mockMvc.perform(post("/google-2fa/login/verify")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("Authorization", "Bearer " + temporaryToken)
                             .content(jsonMapper.writeValueAsString(new Verify2FAReq(111111))))
@@ -389,7 +393,7 @@ class AuthResourceIntegrationTest {
                     .andExpect(jsonPath("$.accessToken").doesNotExist());
 
             // Second failed attempt
-            mockMvc.perform(post("/google-2fa/login/:verify")
+            mockMvc.perform(post("/google-2fa/login/verify")
                             .contentType(MediaType.APPLICATION_JSON)
                             .header("Authorization", "Bearer " + temporaryToken)
                             .content(jsonMapper.writeValueAsString(new Verify2FAReq(222222))))
@@ -419,7 +423,7 @@ class AuthResourceIntegrationTest {
             int validTotpCode = totpGenerator.getTotpPassword(twoFactorConfig.getSecret());
             googleTwoFactorService.verify2FA(new Verify2FAReq(validTotpCode));
 
-            mockMvc.perform(put("/google-2fa/:disable")
+            mockMvc.perform(put("/google-2fa/disable")
                             .header("Authorization", "Bearer " + authTokens.accessToken())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
@@ -447,13 +451,13 @@ class AuthResourceIntegrationTest {
             googleTwoFactorService.verify2FA(new Verify2FAReq(firstCode));
 
             // Disable
-            mockMvc.perform(put("/google-2fa/:disable")
+            mockMvc.perform(put("/google-2fa/disable")
                             .header("Authorization", "Bearer " + authTokens.accessToken())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
             // Re-enable
-            mockMvc.perform(post("/google-2fa/:activate")
+            mockMvc.perform(post("/google-2fa/activate")
                             .header("Authorization", "Bearer " + authTokens.accessToken())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
