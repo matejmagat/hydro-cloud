@@ -1,5 +1,6 @@
 package hr.fer.hydro.measurements.api.rest;
 
+import hr.fer.hydro.measurements.dto.MeasurementBulkRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
 import hr.fer.hydro.stations.dto.StationResponseDto;
@@ -15,7 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @CrossOrigin
@@ -52,6 +55,36 @@ public interface MeasurementsApi {
     ResponseEntity<MeasurementResponseDto> createMeasurement(
             @RequestBody MeasurementRequestDto measurementRequestDto
     );
+
+    @Operation(summary = "Učitava nova meteorološka mjerenja u json formatu")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Meteorološke stanice uspješno učitane.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = MeasurementResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
+            @ApiResponse(responseCode = "403", description = "Zabranjen pristup."),
+            @ApiResponse(responseCode = "404", description = "Entiteti s navedenim ID-jem ne postoje.")
+    })
+    @PostMapping(value = "/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Void> importMeasurementsJson(
+            @RequestBody List<MeasurementBulkRequestDto> measurements
+    );
+
+    @Operation(summary = "Učitava nova meteorološka mjerenja iz csv/xls datoteke")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Meteorološke stanice uspješno učitane.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = MeasurementResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
+            @ApiResponse(responseCode = "403", description = "Zabranjen pristup."),
+            @ApiResponse(responseCode = "404", description = "Entiteti s navedenim ID-jem ne postoje.")
+    })
+    @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ResponseEntity<Void> importMeasurementsFile(
+            @RequestPart("file") MultipartFile file
+    ) throws IOException;
 
     @Operation(summary = "Dohvat meteorološkog mjerenja po ID-u")
     @ApiResponses(value = {

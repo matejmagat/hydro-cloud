@@ -1,6 +1,7 @@
 package hr.fer.hydro.measurements;
 
 import hr.fer.hydro.DataMapper;
+import hr.fer.hydro.measurements.dto.MeasurementBulkRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
 import hr.fer.hydro.measurements.persistence.entities.MeasurementDataPoint;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +37,7 @@ public class MeasurementsService {
     private final MeasurementTypeRepository measurementTypeRepository;
     private final MeasurementValueRepository measurementValueRepository;
     private final DataMapper dataMapper;
+    private final static ZoneId STATION_ZONE = ZoneId.of("Europe/Zagreb");
 
     public List<MeasurementResponseDto> getMeasurements(Long stationId, Long typeId) {
         List<MeasurementDataPoint> measurementDataPoints;
@@ -71,11 +75,41 @@ public class MeasurementsService {
             );
         }
 
-        MeasurementValue measurementValue = new MeasurementValue(measurementRequestDto.value());
+        MeasurementValue measurementValue = measurementValueRepository.save(
+                new MeasurementValue(measurementRequestDto.value(), OffsetDateTime.now()));
 
-        MeasurementDataPoint measurementDataPoint = new MeasurementDataPoint(station.get(), measurementType.get(), measurementValue);
+        MeasurementDataPoint measurementDataPoint = measurementDataPointRepository.save(
+                new MeasurementDataPoint(station.get(), measurementType.get(), measurementValue));
 
         return dataMapper.toMeasurementResponseDto(measurementDataPoint);
+    }
+
+    @Transactional
+    public void createBulkMeasurements(List<MeasurementBulkRequestDto> request) {
+        if (request.isEmpty()) {
+            return;
+        }
+        Long stationId = request.getFirst().stationId();
+        Long typeId = request.getFirst().typeId();
+
+        Station station = stationRepository.findById(stationId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Station with stationId " + stationId + " not found"));
+
+        MeasurementType measurementType = measurementTypeRepository.findById(typeId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Measurement type with typeId " + typeId + " not found"));
+
+        List<MeasurementValue> values = request.stream()
+                .map(dto -> new MeasurementValue(dto.value(), dto.measuredAt().atZone(STATION_ZONE).toOffsetDateTime()))
+                .toList();
+        measurementValueRepository.saveAll(values);
+
+        List<MeasurementDataPoint> points = values.stream()
+                .map(value -> new MeasurementDataPoint(station, measurementType, value))
+                .toList();
+
+        measurementDataPointRepository.saveAll(points);
     }
 
     public MeasurementResponseDto getMeasurement(Long measurementId) {
