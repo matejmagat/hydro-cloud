@@ -1,41 +1,95 @@
 import React from 'react';
-import './mainView.css'
-import '../common.css'
+import './sidebar.css';
+import '../common.css';
+import { useFilter } from '../../context/FilterContext';
 
 function Sidebar() {
+    const { 
+        searchTerm, 
+        setSearchTerm, 
+        isSelectingArea, 
+        setIsSelectingArea,
+        areaPolygon,
+        setAreaPolygon,
+        resetFilters 
+    } = useFilter();
+
+    const handleAreaSelection = () => {
+        if (areaPolygon) {
+            setAreaPolygon(null);
+        } else if (isSelectingArea) {
+            setIsSelectingArea(false);
+        } else {
+            setIsSelectingArea(true);
+        }
+    };
+
+    const getAreaButtonText = () => {
+        if (areaPolygon) {
+            return 'Deselect Area';
+        } else if (isSelectingArea) {
+            return 'Cancel Selection';
+        } else {
+            return 'Select Area';
+        }
+    };
+
+    const getAreaButtonClass = () => {
+        if (areaPolygon || isSelectingArea) {
+            return 'area-button area-button-orange';
+        }
+        return 'area-button area-button-blue';
+    };
+
     return (
         <aside className="sidebar">
-            <div style={{ marginBottom: '24px' }}>
-                <label> Station name </label>
-                <input type="text" placeholder="Search" />
+            <div className="sidebar-section">
+                <label className="sidebar-label">Station name</label>
+                <input 
+                    type="text" 
+                    placeholder="Search" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="sidebar-input"
+                />
             </div>
-            <div style={{ marginBottom: '30px' }}>
-                <label>
-                    Country
-                </label>
-                <select defaultValue="">
-                    <option value="" disabled>
-                        Select
-                    </option>
-                    <option value="country1">Country 1</option>
-                    <option value="country2">Country 2</option>
-                </select>
+
+            <div className="sidebar-section">
+                <label className="sidebar-label">Area Selection</label>
+                <button
+                    onClick={handleAreaSelection}
+                    className={getAreaButtonClass()}
+                >
+                    {getAreaButtonText()}
+                </button>
+                {areaPolygon && !isSelectingArea && (
+                    <div className="area-active-info">
+                        ✓ Area active ({areaPolygon.length} points)
+                    </div>
+                )}
             </div>
-            <div>
-                <div style={{ fontWeight: 'bold', fontSize: '1.1em' }}>Time Period</div>
-                <div style={{ justifyContent: 'start', gap: '18px', margin: '12px 0 0 0' }}>
+
+            <div className="sidebar-section">
+                <div className="time-period-title">Time Period</div>
+                <div className="time-period-row">
                     <div>
-                        <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>From</div>
-                        <input type="date" />
+                        <div className="time-period-label">From</div>
+                        <input type="date" className="time-period-input" />
                     </div>
                     <div>
-                        <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>To</div>
-                        <input type="date"/>
+                        <div className="time-period-label">To</div>
+                        <input type="date" className="time-period-input" />
                     </div>
                 </div>
             </div>
-            <div>
-                <button> Search </button>
+
+            <div className="sidebar-section">
+                <button 
+                    onClick={resetFilters}
+                    className="reset-button"
+                > 
+                    Reset Filters 
+                </button>
             </div>
         </aside>
     );
