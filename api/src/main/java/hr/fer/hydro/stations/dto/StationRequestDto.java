@@ -8,9 +8,9 @@ public record StationRequestDto(
         String stationName,
 
         @NonNull
-        Long longitude,
+        Double longitude,
 
         @NonNull
-        Long latitude
+        Double latitude
 ) {
 }
