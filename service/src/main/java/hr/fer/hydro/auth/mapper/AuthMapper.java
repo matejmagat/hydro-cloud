@@ -15,6 +15,8 @@ public interface AuthMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", expression = "java(user)")
+    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "confirmed", expression = "java(Boolean.FALSE)")
     User2FAEntity toUser2FAEntity(UserEntity user, String secret, Integer validationCode);
 
     @Mapping(target = "id", ignore = true)

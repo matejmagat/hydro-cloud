@@ -46,6 +46,10 @@ public class GoogleAuthCredentialRepository implements ICredentialRepository {
     @Override
     public void saveUserCredentials(final String username, final String secretKey, final int validationCode, List<Integer> scratchCode) {
         final UserEntity user = findUserByUsername(username);
+
+        user2FADao.deleteAllByUser(user);
+        user2FAScratchCodeDao.deleteAllByUser(user);
+
         user2FADao.save(authMapper.toUser2FAEntity(user, secretKey, validationCode));
         user2FAScratchCodeDao.saveAllAndFlush(
                 scratchCode.stream()
