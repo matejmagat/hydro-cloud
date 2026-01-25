@@ -1,4 +1,4 @@
-package hr.fer.hydro;
+package hr.fer.hydro.auth.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DisplayName("Authentication Integration Tests")
-class AuthResourceIntegrationTest {
+class AuthControllerIntegrationTest {
 
     @Container
     @ServiceConnection

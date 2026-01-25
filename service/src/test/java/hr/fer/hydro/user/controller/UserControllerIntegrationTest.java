@@ -1,4 +1,4 @@
-package hr.fer.hydro;
+package hr.fer.hydro.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hr.fer.hydro.auth.auth.dto.LoginReq;

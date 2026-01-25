@@ -1,4 +1,4 @@
-package hr.fer.hydro.user.resource;
+package hr.fer.hydro.user.controller;
 
 import hr.fer.hydro.user.api.rest.UserApi;
 import hr.fer.hydro.user.dto.UserDetailInfoDto;
