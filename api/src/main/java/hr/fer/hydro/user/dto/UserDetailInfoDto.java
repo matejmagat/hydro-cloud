@@ -1,5 +1,6 @@
 package hr.fer.hydro.user.dto;
 
+import hr.fer.hydro.user.api.rest.Role;
 import lombok.*;
 
 @Getter
@@ -15,4 +16,5 @@ public class UserDetailInfoDto {
     private String username;
     private String email;
     private boolean is2FAEnabled;
+    private Role role;
 }
