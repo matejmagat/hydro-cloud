@@ -3,6 +3,7 @@ package hr.fer.hydro.user.service;
 import hr.fer.hydro.user.dto.UserDetailInfoDto;
 import hr.fer.hydro.user.dto.UserDto;
 import hr.fer.hydro.user.dto.req.UpdateUserReq;
+import hr.fer.hydro.user.dto.req.UpdateUserRoleReq;
 
 import java.util.List;
 
@@ -14,4 +15,6 @@ public interface UserService {
     UserDetailInfoDto updateUser(UpdateUserReq updateUserReq);
 
     UserDetailInfoDto getLoggedInUserInfo();
+
+    void updateUserRole(UpdateUserRoleReq updateUserRoleReq);
 }

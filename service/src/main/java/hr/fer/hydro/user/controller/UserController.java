@@ -4,6 +4,7 @@ import hr.fer.hydro.user.api.rest.UserApi;
 import hr.fer.hydro.user.dto.UserDetailInfoDto;
 import hr.fer.hydro.user.dto.UserDto;
 import hr.fer.hydro.user.dto.req.UpdateUserReq;
+import hr.fer.hydro.user.dto.req.UpdateUserRoleReq;
 import hr.fer.hydro.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -43,5 +44,11 @@ public class UserController implements UserApi {
     @Override
     public ResponseEntity<UserDetailInfoDto> getLoggedInUserInfo() {
         return ResponseEntity.ok(userService.getLoggedInUserInfo());
+    }
+
+    @Override
+    @PreAuthorize("hasAuthority('USER_ASSIGN_ROLE')")
+    public void updateUserRole(UpdateUserRoleReq updateUserRoleReq) {
+        userService.updateUserRole(updateUserRoleReq);
     }
 }
