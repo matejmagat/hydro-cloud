@@ -95,11 +95,11 @@ public class UserServiceImpl implements UserService {
         Role userToUpdateRole = Role.getRole(userRoleDao.findByUser(userToUpdate).orElseThrow().getRole().getRoleName());
 
         if (currentUserRole.equals(userToUpdateRole)){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not enough rights");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough rights");
         }
 
         if (userToUpdateRole.equals(Role.ADMIN)){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not enough rights");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not enough rights");
         }
     }
 

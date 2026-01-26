@@ -23,9 +23,9 @@ public interface UserApi {
     @GetMapping("/all-users")
     ResponseEntity<List<UserDto>> getAllUsers();
 
-    @GetMapping
+    @GetMapping("/me")
     ResponseEntity<UserDetailInfoDto> getLoggedInUserInfo();
 
-    @PutMapping
+    @PutMapping("/update-role")
     void updateUserRole(@RequestBody UpdateUserRoleReq updateUserRoleReq);
 }

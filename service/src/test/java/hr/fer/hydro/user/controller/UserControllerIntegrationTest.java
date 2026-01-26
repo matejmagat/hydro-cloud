@@ -8,6 +8,7 @@ import hr.fer.hydro.auth.persistence.entities.UserEntity;
 import hr.fer.hydro.auth.persistence.repositories.User2FADao;
 import hr.fer.hydro.auth.persistence.repositories.User2FAScratchCodeDao;
 import hr.fer.hydro.auth.persistence.repositories.UserDao;
+import hr.fer.hydro.auth.persistence.repositories.UserRoleDao;
 import hr.fer.hydro.config.core.UserCoreLocalThread;
 import hr.fer.hydro.user.dto.req.UpdateUserReq;
 import org.junit.jupiter.api.AfterEach;
@@ -63,13 +64,16 @@ class UserControllerIntegrationTest {
     private ObjectMapper jsonMapper;
 
     @Autowired
-    private UserDao userRepository;
+    private UserDao userDao;
 
     @Autowired
-    private User2FADao twoFactorAuthRepository;
+    private UserRoleDao userRoleDao;
 
     @Autowired
-    private User2FAScratchCodeDao scratchCodeRepository;
+    private User2FADao user2FADao;
+
+    @Autowired
+    private User2FAScratchCodeDao user2FAScratchCodeDao;
 
     @Autowired
     private AuthService authService;
@@ -79,15 +83,15 @@ class UserControllerIntegrationTest {
     @AfterEach
     void cleanup() {
         UserCoreLocalThread.deleteUserInfo();
-        userRepository.findByUsername("regular_user").ifPresent(user -> {
-            scratchCodeRepository.deleteAll(scratchCodeRepository.findAllByUser(user));
-            twoFactorAuthRepository.findByUser(user).ifPresent(twoFactorAuthRepository::delete);
-            userRepository.delete(user);
+        userDao.findByUsername("regular_user").ifPresent(user -> {
+            user2FAScratchCodeDao.deleteAll(user2FAScratchCodeDao.findAllByUser(user));
+            user2FADao.findByUser(user).ifPresent(user2FADao::delete);
+            userDao.delete(user);
         });
-        userRepository.findByUsername("delete_me").ifPresent(user -> {
-            scratchCodeRepository.deleteAll(scratchCodeRepository.findAllByUser(user));
-            twoFactorAuthRepository.findByUser(user).ifPresent(twoFactorAuthRepository::delete);
-            userRepository.delete(user);
+        userDao.findByUsername("delete_me").ifPresent(user -> {
+            user2FAScratchCodeDao.deleteAll(user2FAScratchCodeDao.findAllByUser(user));
+            user2FADao.findByUser(user).ifPresent(user2FADao::delete);
+            userDao.delete(user);
         });
     }
 
@@ -180,7 +184,7 @@ class UserControllerIntegrationTest {
         void adminCanRetrieveDetailedUserInfo() throws Exception {
             String adminToken = getAdminToken();
             createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             mockMvc.perform(get("/user/" + regularUser.getId())
                             .header("Authorization", "Bearer " + adminToken)
@@ -198,7 +202,7 @@ class UserControllerIntegrationTest {
         void userManagerCanRetrieveDetailedUserInfo() throws Exception {
             String userManagerToken = getUserManagerToken();
             String regularUserToken = createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             mockMvc.perform(get("/user/" + regularUser.getId())
                             .header("Authorization", "Bearer " + userManagerToken)
@@ -212,7 +216,7 @@ class UserControllerIntegrationTest {
         void dataManagerCannotRetrieveDetailedUserInfo() throws Exception {
             String dataManagerToken = getDataManagerToken();
             String regularUserToken = createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             mockMvc.perform(get("/user/" + regularUser.getId())
                             .header("Authorization", "Bearer " + dataManagerToken)
@@ -241,7 +245,7 @@ class UserControllerIntegrationTest {
         void adminCanUpdateUserInfo() throws Exception {
             String adminToken = getAdminToken();
             createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             UpdateUserReq updateRequest = new UpdateUserReq();
             updateRequest.setId(regularUser.getId());
@@ -266,7 +270,7 @@ class UserControllerIntegrationTest {
         void userManagerCanUpdateUserInfo() throws Exception {
             String userManagerToken = getUserManagerToken();
             createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             UpdateUserReq updateRequest = new UpdateUserReq();
             updateRequest.setId(regularUser.getId());
@@ -291,7 +295,7 @@ class UserControllerIntegrationTest {
         void dataManagerCannotUpdateUserInfo() throws Exception {
             String dataManagerToken = getDataManagerToken();
             String regularUserToken = createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             UpdateUserReq updateRequest = new UpdateUserReq();
             updateRequest.setId(regularUser.getId());
@@ -349,7 +353,7 @@ class UserControllerIntegrationTest {
                     "delete@example.hr", "SecurePass123!"
             );
             authService.signUp(userToDelete);
-            UserEntity deletableUser = userRepository.findByUsername("delete_me").orElseThrow();
+            UserEntity deletableUser = userDao.findByUsername("delete_me").orElseThrow();
 
             mockMvc.perform(delete("/user/" + deletableUser.getId())
                             .header("Authorization", "Bearer " + adminToken)
@@ -357,7 +361,7 @@ class UserControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             // Verify user is deleted
-            assertThat(userRepository.findByUsername("delete_me").orElse(null)).isNull();
+            assertThat(userDao.findByUsername("delete_me").orElse(null)).isNull();
 
         }
 
@@ -366,7 +370,7 @@ class UserControllerIntegrationTest {
         void userManagerCannotDeleteUser() throws Exception {
             String userManagerToken = getUserManagerToken();
             createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             mockMvc.perform(delete("/user/" + regularUser.getId())
                             .header("Authorization", "Bearer " + userManagerToken)
@@ -379,7 +383,7 @@ class UserControllerIntegrationTest {
         void dataManagerCannotDeleteUser() throws Exception {
             String dataManagerToken = getDataManagerToken();
             createAndGetRegularUserToken();
-            UserEntity regularUser = userRepository.findByUsername("regular_user").orElseThrow();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
 
             mockMvc.perform(delete("/user/" + regularUser.getId())
                             .header("Authorization", "Bearer " + dataManagerToken)
@@ -391,7 +395,7 @@ class UserControllerIntegrationTest {
         @DisplayName("Regular user cannot delete user")
         void regularUserCannotDeleteUser() throws Exception {
             String regularUserToken = createAndGetRegularUserToken();
-            UserEntity adminUser = userRepository.findByUsername("admin").orElseThrow();
+            UserEntity adminUser = userDao.findByUsername("admin").orElseThrow();
 
             mockMvc.perform(delete("/user/" + adminUser.getId())
                             .header("Authorization", "Bearer " + regularUserToken)
@@ -443,4 +447,263 @@ class UserControllerIntegrationTest {
                     .andExpect(status().isForbidden());
         }
     }
+
+    @Nested
+    @DisplayName("Get Logged In User Info Scenarios")
+    class GetLoggedInUserInfoTests {
+
+        @Test
+        @DisplayName("Admin can retrieve their own user information")
+        void adminCanRetrieveOwnInfo() throws Exception {
+            String adminToken = getAdminToken();
+
+            mockMvc.perform(get("/user/me")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.username").value("admin"))
+                    .andExpect(jsonPath("$.role").value("ADMIN"));
+        }
+
+        @Test
+        @DisplayName("User manager can retrieve their own user information")
+        void userManagerCanRetrieveOwnInfo() throws Exception {
+            String userManagerToken = getUserManagerToken();
+
+            mockMvc.perform(get("/user/me")
+                            .header("Authorization", "Bearer " + userManagerToken)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.username").value("user_manager"))
+                    .andExpect(jsonPath("$.role").value("USER_MANAGER"));
+        }
+
+        @Test
+        @DisplayName("Data manager can retrieve their own user information")
+        void dataManagerCanRetrieveOwnInfo() throws Exception {
+            String dataManagerToken = getDataManagerToken();
+
+            mockMvc.perform(get("/user/me")
+                            .header("Authorization", "Bearer " + dataManagerToken)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.username").value("data_manager"))
+                    .andExpect(jsonPath("$.role").value("DATA_MANAGER"));
+        }
+
+        @Test
+        @DisplayName("Regular user can retrieve their own user information")
+        void regularUserCanRetrieveOwnInfo() throws Exception {
+            String regularUserToken = createAndGetRegularUserToken();
+
+            mockMvc.perform(get("/user/me")
+                            .header("Authorization", "Bearer " + regularUserToken)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.username").value("regular_user"))
+                    .andExpect(jsonPath("$.email").value("regular@example.hr"))
+                    .andExpect(jsonPath("$.firstName").value("Regular"))
+                    .andExpect(jsonPath("$.lastName").value("User"))
+                    .andExpect(jsonPath("$.role").value("USER"));
+        }
+
+        @Test
+        @DisplayName("Unauthenticated request is rejected")
+        void unauthenticatedRequestIsRejected() throws Exception {
+            mockMvc.perform(get("/user/me")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    @Nested
+    @DisplayName("Update User Role Scenarios")
+    class UpdateUserRoleTests {
+
+        @Test
+        @DisplayName("Admin can update regular user role to USER_MANAGER")
+        void adminCanUpdateRegularUserToUserManager() throws Exception {
+            String adminToken = getAdminToken();
+            createAndGetRegularUserToken();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
+
+            String updateRolePayload = String.format(
+                    "{\"userId\": %d, \"role\": \"USER_MANAGER\"}",
+                    regularUser.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isOk());
+
+            // Verify role was updated
+            mockMvc.perform(get("/user/" + regularUser.getId())
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.role").value("USER_MANAGER"));
+        }
+
+        @Test
+        @DisplayName("Admin can update regular user role to DATA_MANAGER")
+        void adminCanUpdateRegularUserToDataManager() throws Exception {
+            String adminToken = getAdminToken();
+            createAndGetRegularUserToken();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
+
+            String updateRolePayload = String.format(
+                    "{\"userId\": %d, \"role\": \"DATA_MANAGER\"}",
+                    regularUser.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("Admin cannot update another admin's role")
+        void adminCannotUpdateAnotherAdminRole() throws Exception {
+            String adminToken = getAdminToken();
+            UserEntity adminUser = userDao.findByUsername("admin").orElseThrow();
+
+            String updateRolePayload = String.format(
+                    "{\"userId\": %d, \"role\": \"USER\"}",
+                    adminUser.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("Admin cannot downgrade user to their own role level")
+        void adminCannotDowngradeToOwnLevel() throws Exception {
+            String adminToken = getAdminToken();
+            createAndGetRegularUserToken();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
+
+            String updateRolePayload = String.format(
+                    "{\"userId\": %d, \"role\": \"ADMIN\"}",
+                    regularUser.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("User manager can update user roles")
+        void userManagerCannotUpdateUserRoles() throws Exception {
+            String userManagerToken = getUserManagerToken();
+            createAndGetRegularUserToken();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
+
+            String updateRolePayload = String.format(
+                    "{\"userId\": %d, \"role\": \"DATA_MANAGER\"}",
+                    regularUser.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + userManagerToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("Data manager cannot update user roles")
+        void dataManagerCannotUpdateUserRoles() throws Exception {
+            String dataManagerToken = getDataManagerToken();
+            createAndGetRegularUserToken();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
+
+            String updateRolePayload = String.format(
+                    "{\"userId\": %d, \"role\": \"USER_MANAGER\"}",
+                    regularUser.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + dataManagerToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("Regular user cannot update user roles")
+        void regularUserCannotUpdateUserRoles() throws Exception {
+            String regularUserToken = createAndGetRegularUserToken();
+            UserEntity dataManager = userDao.findByUsername("data_manager").orElseThrow();
+
+            String updateRolePayload = String.format(
+                    "{\"userId\": %d, \"role\": \"USER\"}",
+                    dataManager.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + regularUserToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("Returns 404 when updating role for non-existent user")
+        void returns404WhenUpdatingRoleForNonExistentUser() throws Exception {
+            String adminToken = getAdminToken();
+
+            String updateRolePayload = "{\"userId\": 99999, \"role\": \"USER_MANAGER\"}";
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRolePayload))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Validates update role request with invalid role")
+        void validatesUpdateRoleRequestWithInvalidRole() throws Exception {
+            String adminToken = getAdminToken();
+            createAndGetRegularUserToken();
+            UserEntity regularUser = userDao.findByUsername("regular_user").orElseThrow();
+
+            String invalidPayload = String.format(
+                    "{\"userId\": %d, \"role\": \"INVALID_ROLE\"}",
+                    regularUser.getId()
+            );
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(invalidPayload))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("Validates update role request with missing fields")
+        void validatesUpdateRoleRequestWithMissingFields() throws Exception {
+            String adminToken = getAdminToken();
+            String invalidPayload = "{\"userId\": null, \"role\": null}";
+
+            mockMvc.perform(put("/user/update-role")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(invalidPayload))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
 }
