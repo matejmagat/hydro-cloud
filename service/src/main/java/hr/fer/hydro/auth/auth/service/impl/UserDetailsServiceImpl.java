@@ -49,7 +49,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(final UserEntity user) {
-        return userRoleDao.findAllByUser(user)
+        return userRoleDao.findByUser(user)
                 .stream()
                 .map(UserRoleEntity::getRole)
                 .map(rolePrivilegeDao::findByRole)
