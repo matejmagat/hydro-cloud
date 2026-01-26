@@ -2,6 +2,7 @@ package hr.fer.hydro.user.service.impl;
 
 import hr.fer.hydro.auth.persistence.entities.UserEntity;
 import hr.fer.hydro.auth.persistence.repositories.UserDao;
+import hr.fer.hydro.config.core.UserCoreLocalThread;
 import hr.fer.hydro.user.dto.UserDetailInfoDto;
 import hr.fer.hydro.user.dto.UserDto;
 import hr.fer.hydro.user.dto.req.UpdateUserReq;
@@ -34,7 +35,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserDetailInfoDto getUserInfo(Integer userId) {
         UserEntity user = getUserEntity(userId);
-        return userMapper.toUserDetailInfoDto(user);
+        return userMapper.toUserDetailInfoDto(new UserDetailInfoDto(), user);
     }
 
     @Override
@@ -50,7 +51,14 @@ public class UserServiceImpl implements UserService {
     public UserDetailInfoDto updateUser(UpdateUserReq updateUserReq) {
         UserEntity user = getUserEntity(updateUserReq.getId());
         userMapper.updateUser(user, updateUserReq);
-        return userMapper.toUserDetailInfoDto(user);
+        return userMapper.toUserDetailInfoDto(new UserDetailInfoDto(),user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDetailInfoDto getLoggedInUserInfo() {
+        final UserEntity loggedUser = getUserEntity(UserCoreLocalThread.getUserId());
+        return userMapper.toUserDetailInfoDto(new UserDetailInfoDto(),loggedUser);
     }
 
     private UserEntity getUserEntity(Integer userId) {

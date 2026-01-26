@@ -21,4 +21,7 @@ public interface UserApi {
 
     @GetMapping("/all-users")
     ResponseEntity<List<UserDto>> getAllUsers();
+
+    @GetMapping
+    ResponseEntity<UserDetailInfoDto> getLoggedInUserInfo();
 }

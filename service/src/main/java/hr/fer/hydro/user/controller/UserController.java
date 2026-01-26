@@ -39,4 +39,9 @@ public class UserController implements UserApi {
     public ResponseEntity<List<UserDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
+
+    @Override
+    public ResponseEntity<UserDetailInfoDto> getLoggedInUserInfo() {
+        return ResponseEntity.ok(userService.getLoggedInUserInfo());
+    }
 }

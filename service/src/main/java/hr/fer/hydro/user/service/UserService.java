@@ -12,4 +12,6 @@ public interface UserService {
     UserDetailInfoDto getUserInfo(Integer userId);
     List<UserDto> getAllUsers();
     UserDetailInfoDto updateUser(UpdateUserReq updateUserReq);
+
+    UserDetailInfoDto getLoggedInUserInfo();
 }
