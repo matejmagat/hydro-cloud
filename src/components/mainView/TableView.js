@@ -5,6 +5,44 @@ import { stationsService } from '../../services/stationsService';
 import { useFilter } from '../../context/FilterContext';
 import './tableView.css';
 
+// Helper function to handle CSV generation and download
+const downloadCSV = (data, fileName = 'export.csv') => {
+    if (!data || data.length === 0) {
+        alert("No data to export");
+        return;
+    }
+
+    // 1. Extract headers from the first object
+    const headers = Object.keys(data[0]);
+
+    // 2. Convert data to CSV string
+    const csvContent = [
+        headers.join(','), // Header row
+        ...data.map(row =>
+            headers.map(header => {
+                let value = row[header] === null || row[header] === undefined ? '' : row[header];
+
+                // Escape quotes and wrap in quotes if the value contains a comma, newline, or quote
+                const stringValue = value.toString().replace(/"/g, '""');
+                if (stringValue.search(/("|,|\n)/g) >= 0) {
+                    return `"${stringValue}"`;
+                }
+                return stringValue;
+            }).join(',')
+        )
+    ].join('\n');
+
+    // 3. Create a Blob and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
 function TableView() {
     const [measurements, setMeasurements] = useState([]);
     const [stations, setStations] = useState([]);
@@ -64,7 +102,6 @@ function TableView() {
     const filteredStationNames = filteredStations.map(s => s.stationName);
 
     // 2. Create 'filteredByStations' which includes Station AND Date filters
-    // This variable is required for the dropdown counts in your target UI
     const filteredByStations = measurements.filter(measurement => {
         const matchesStation = filteredStationNames.includes(measurement.station);
 
@@ -92,6 +129,19 @@ function TableView() {
     );
 
     const availableMeasurementTypes = [...new Set(filteredByStations.map(m => m.type))].sort();
+
+    // Handler for the Export button
+    const handleExport = () => {
+        // Optional: formatting data before export (e.g., formatting dates)
+        // If you want raw data, pass filteredMeasurements directly.
+        // Here is a version that formats the date to be readable in Excel:
+        const dataToExport = filteredMeasurements.map(m => ({
+            ...m,
+            measuredAt: new Date(m.measuredAt).toLocaleString('hr-HR')
+        }));
+
+        downloadCSV(dataToExport, 'measurements-export.csv');
+    };
 
     if (loading) {
         return <div className="loading-state">Loading data...</div>;
@@ -175,7 +225,15 @@ function TableView() {
                 </>
             )}
 
-            <button className="export-button">Export Data</button>
+            {/* UPDATED EXPORT BUTTON */}
+            <button
+                className="export-button"
+                onClick={handleExport}
+                disabled={filteredMeasurements.length === 0}
+                style={filteredMeasurements.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            >
+                Export Data
+            </button>
         </div>
     );
 }
