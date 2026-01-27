@@ -15,7 +15,7 @@ import {
 import { measurementsService } from '../../services/measurementsService';
 import { stationsService } from '../../services/stationsService';
 import { useFilter } from '../../context/FilterContext';
-// We can reuse the table view styles for the filter controls if applicable
+// Reuse table styles
 import './tableView.css';
 
 // Register chart components
@@ -31,17 +31,15 @@ ChartJS.register(
 );
 
 function ChartView() {
-    // 1. Shared State & Logic (Same as TableView)
     const [measurements, setMeasurements] = useState([]);
     const [stations, setStations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedMeasurementType, setSelectedMeasurementType] = useState('all');
-
-    // 2. New State for Chart Type
     const [chartType, setChartType] = useState('line');
 
-    const { searchTerm, areaPolygon } = useFilter();
+    // Get all filters including startDate and endDate
+    const { searchTerm, areaPolygon, startDate, endDate } = useFilter();
 
     useEffect(() => {
         fetchData();
@@ -51,7 +49,7 @@ function ChartView() {
         try {
             setLoading(true);
             const [measurementsData, stationsData] = await Promise.all([
-                measurementsService.getAllMeasurements(null, null),
+                measurementsService.getAllMeasurements(),
                 stationsService.getAllStations()
             ]);
             setMeasurements(measurementsData);
@@ -65,7 +63,6 @@ function ChartView() {
         }
     };
 
-    // Polygon filtering logic
     const isPointInPolygon = (point, polygon) => {
         if (!polygon || polygon.length < 3) return true;
         let inside = false;
@@ -79,7 +76,7 @@ function ChartView() {
         return inside;
     };
 
-    // Filter Stations
+    // 1. Filter Stations based on Search and Area
     const filteredStations = stations.filter(station => {
         const matchesSearch = station.stationName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesArea = isPointInPolygon(
@@ -91,19 +88,36 @@ function ChartView() {
 
     const filteredStationNames = filteredStations.map(s => s.stationName);
 
-    // Filter Measurements by Station
-    const filteredByStations = measurements.filter(measurement =>
-        filteredStationNames.includes(measurement.station)
-    );
+    // 2. Filter Measurements by Station AND Date
+    const filteredByStations = measurements.filter(measurement => {
+        const matchesStation = filteredStationNames.includes(measurement.station);
 
-    // Filter Measurements by Type
+        let matchesDate = true;
+        if (startDate || endDate) {
+            const mDate = new Date(measurement.measuredAt);
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                if (mDate < start) matchesDate = false;
+            }
+            if (endDate && matchesDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                if (mDate > end) matchesDate = false;
+            }
+        }
+
+        return matchesStation && matchesDate;
+    });
+
+    // 3. Filter Measurements by Type
     const filteredMeasurements = filteredByStations.filter(measurement =>
         selectedMeasurementType === 'all' || measurement.type === selectedMeasurementType
     );
 
     const availableMeasurementTypes = [...new Set(filteredByStations.map(m => m.type))].sort();
 
-    // 3. Prepare Chart Data
+    // 4. Prepare Chart Data
     const chartData = useMemo(() => {
         if (filteredMeasurements.length === 0) return null;
 
@@ -112,8 +126,6 @@ function ChartView() {
             .sort()
             .map(dateStr => new Date(dateStr).toLocaleString('hr-HR'));
 
-        // Group data by Station (and Type if 'all' is selected to avoid confusion)
-        // We create a unique key for each dataset: "StationName - Type"
         const groupedData = {};
 
         filteredMeasurements.forEach(m => {
@@ -125,23 +137,19 @@ function ChartView() {
                 groupedData[labelKey] = [];
             }
 
-            // Map the value to the correct index in labels
-            // (This ensures values align with the correct time on X-axis)
             const dateLabel = new Date(m.measuredAt).toLocaleString('hr-HR');
             groupedData[labelKey].push({ x: dateLabel, y: m.value });
         });
 
-        // specific colors for differentiation
         const colors = [
             'rgba(75,192,192,1)', 'rgba(255,99,132,1)', 'rgba(54,162,235,1)',
             'rgba(255,206,86,1)', 'rgba(153,102,255,1)', 'rgba(255,159,64,1)'
         ];
 
         const datasets = Object.keys(groupedData).map((key, index) => {
-            // Create a sparse array matching the labels length
             const dataPoints = labels.map(label => {
                 const found = groupedData[key].find(item => item.x === label);
-                return found ? found.y : null; // null for gaps
+                return found ? found.y : null;
             });
 
             const color = colors[index % colors.length];
@@ -151,7 +159,7 @@ function ChartView() {
                 data: dataPoints,
                 borderColor: color,
                 backgroundColor: color.replace('1)', '0.5)'),
-                tension: 0.3, // slight curve for lines
+                tension: 0.3,
             };
         });
 
@@ -161,7 +169,7 @@ function ChartView() {
 
     const chartOptions = {
         responsive: true,
-        maintainAspectRatio: false, // Allows height control via CSS
+        maintainAspectRatio: false,
         plugins: {
             legend: { position: 'top' },
             title: {
@@ -175,7 +183,7 @@ function ChartView() {
         },
         scales: {
             y: {
-                beginAtZero: false, // Often better for measurements like temp
+                beginAtZero: false,
                 title: {
                     display: true,
                     text: selectedMeasurementType === 'all' ? 'Value' : filteredMeasurements[0]?.unit || 'Value'
@@ -196,20 +204,19 @@ function ChartView() {
     }, [selectedMeasurementType]);
 
 
-    if (loading) return <div className="table-view-loading"><h2>Loading charts...</h2></div>;
-    if (error) return <div className="table-view-error"><h2>{error}</h2></div>;
+    if (loading) return <div className="loading-state"><h2>Loading charts...</h2></div>;
+    if (error) return <div className="error-state"><h2>{error}</h2></div>;
 
     return (
-        <div className="table-view-container"> {/* Reuse container class */}
+        <div className="table-view-container">
             <h2 className="table-view-title">
                 Measurements Chart
-                {(searchTerm || areaPolygon) && ` - Filtered (${filteredStations.length} stations)`}
+                {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${filteredStations.length} stations)`}
             </h2>
 
             {/* Controls Section */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
 
-                {/* 1. Measurement Type Picker (Reused Logic) */}
                 {filteredByStations.length > 0 && (
                     <div className="measurement-type-filter" style={{margin: 0}}>
                         <label htmlFor="measurementType" className="measurement-type-label">
@@ -234,7 +241,6 @@ function ChartView() {
                     </div>
                 )}
 
-                {/* 2. Chart Type Picker (New) */}
                 <div className="measurement-type-filter" style={{margin: 0}}>
                     <label htmlFor="chartType" className="measurement-type-label">
                         Chart Type
@@ -251,11 +257,12 @@ function ChartView() {
                 </div>
             </div>
 
-            {/* Chart Rendering */}
             <div style={{ height: '400px', width: '100%', backgroundColor: '#fff', padding: '10px', borderRadius: '4px' }}>
                 {!chartData || chartData.datasets.length === 0 ? (
                     <p className="no-measurements-text" style={{ textAlign: 'center', marginTop: '150px' }}>
-                        No data available for the selected filters.
+                        {(searchTerm || areaPolygon || startDate || endDate)
+                            ? 'No measurements match your filters.'
+                            : 'No data available.'}
                     </p>
                 ) : (
                     chartType === 'line'
