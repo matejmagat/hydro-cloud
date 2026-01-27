@@ -1,17 +1,23 @@
+// Sidebar.js
 import React from 'react';
 import './sidebar.css';
 import '../common.css';
 import { useFilter } from '../../context/FilterContext';
 
 function Sidebar() {
-    const { 
-        searchTerm, 
-        setSearchTerm, 
-        isSelectingArea, 
+    const {
+        searchTerm,
+        setSearchTerm,
+        isSelectingArea,
         setIsSelectingArea,
         areaPolygon,
         setAreaPolygon,
-        resetFilters 
+        resetFilters,
+        // Destructure new values
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate
     } = useFilter();
 
     const handleAreaSelection = () => {
@@ -45,9 +51,9 @@ function Sidebar() {
         <aside className="sidebar">
             <div className="sidebar-section">
                 <label className="sidebar-label">Station name</label>
-                <input 
-                    type="text" 
-                    placeholder="Search" 
+                <input
+                    type="text"
+                    placeholder="Search"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="sidebar-input"
@@ -74,21 +80,33 @@ function Sidebar() {
                 <div className="time-period-row">
                     <div>
                         <div className="time-period-label">From</div>
-                        <input type="date" className="time-period-input" />
+                        {/* Connected Start Date Input */}
+                        <input
+                            type="date"
+                            className="time-period-input"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
                     </div>
                     <div>
                         <div className="time-period-label">To</div>
-                        <input type="date" className="time-period-input" />
+                        {/* Connected End Date Input */}
+                        <input
+                            type="date"
+                            className="time-period-input"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
                     </div>
                 </div>
             </div>
 
             <div className="sidebar-section">
-                <button 
+                <button
                     onClick={resetFilters}
                     className="reset-button"
-                > 
-                    Reset Filters 
+                >
+                    Reset Filters
                 </button>
             </div>
         </aside>

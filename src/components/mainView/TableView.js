@@ -1,3 +1,4 @@
+// TableView.js
 import React, { useState, useEffect } from 'react';
 import { measurementsService } from '../../services/measurementsService';
 import { stationsService } from '../../services/stationsService';
@@ -10,8 +11,9 @@ function TableView() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedMeasurementType, setSelectedMeasurementType] = useState('all');
-    
-    const { searchTerm, areaPolygon } = useFilter();
+
+    // Destructure all filters including new date filters
+    const { searchTerm, areaPolygon, startDate, endDate } = useFilter();
 
     useEffect(() => {
         fetchData();
@@ -20,12 +22,11 @@ function TableView() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            
+            // Fetch ALL data and filter on client side as requested
             const [measurementsData, stationsData] = await Promise.all([
-                measurementsService.getAllMeasurements(null, null),
+                measurementsService.getAllMeasurements(),
                 stationsService.getAllStations()
             ]);
-            
             setMeasurements(measurementsData);
             setStations(stationsData);
             setError(null);
@@ -39,25 +40,22 @@ function TableView() {
 
     const isPointInPolygon = (point, polygon) => {
         if (!polygon || polygon.length < 3) return true;
-
         let inside = false;
         for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
             const xi = polygon[i].lat, yi = polygon[i].lng;
             const xj = polygon[j].lat, yj = polygon[j].lng;
-
-            const intersect = ((yi > point.lng) !== (yj > point.lng))
-                && (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
-            
+            const intersect = ((yi > point.lng) !== (yj > point.lng)) &&
+                (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
             if (intersect) inside = !inside;
         }
-
         return inside;
     };
 
+    // 1. Filter Stations based on Search and Area
     const filteredStations = stations.filter(station => {
         const matchesSearch = station.stationName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesArea = isPointInPolygon(
-            { lat: station.latitude, lng: station.longitude }, 
+            { lat: station.latitude, lng: station.longitude },
             areaPolygon
         );
         return matchesSearch && matchesArea;
@@ -65,44 +63,55 @@ function TableView() {
 
     const filteredStationNames = filteredStations.map(s => s.stationName);
 
-    const filteredByStations = measurements.filter(measurement => 
-        filteredStationNames.includes(measurement.station)
-    );
+    // 2. Create 'filteredByStations' which includes Station AND Date filters
+    // This variable is required for the dropdown counts in your target UI
+    const filteredByStations = measurements.filter(measurement => {
+        const matchesStation = filteredStationNames.includes(measurement.station);
 
-    const filteredMeasurements = filteredByStations.filter(measurement => 
+        let matchesDate = true;
+        if (startDate || endDate) {
+            const mDate = new Date(measurement.measuredAt);
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                if (mDate < start) matchesDate = false;
+            }
+            if (endDate && matchesDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                if (mDate > end) matchesDate = false;
+            }
+        }
+
+        return matchesStation && matchesDate;
+    });
+
+    // 3. Final list filtered by Type
+    const filteredMeasurements = filteredByStations.filter(measurement =>
         selectedMeasurementType === 'all' || measurement.type === selectedMeasurementType
     );
 
     const availableMeasurementTypes = [...new Set(filteredByStations.map(m => m.type))].sort();
 
     if (loading) {
-        return (
-            <div className="table-view-loading">
-                <h2>Loading measurements...</h2>
-            </div>
-        );
+        return <div className="loading-state">Loading data...</div>;
     }
 
     if (error) {
-        return (
-            <div className="table-view-error">
-                <h2 className="table-view-error-title">{error}</h2>
-                <button onClick={fetchData} className="retry-button">Try Again</button>
-            </div>
-        );
+        return <div className="error-state">{error}</div>;
     }
 
     return (
         <div className="table-view-container">
             <h2 className="table-view-title">
                 Measurements
-                {(searchTerm || areaPolygon) && ` - Filtered (${filteredStations.length} stations)`}
+                {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${filteredStations.length} stations)`}
             </h2>
 
             {filteredByStations.length > 0 && (
                 <div className="measurement-type-filter">
-                    <label 
-                        htmlFor="measurementType" 
+                    <label
+                        htmlFor="measurementType"
                         className="measurement-type-label"
                     >
                         Measurement Type
@@ -128,8 +137,8 @@ function TableView() {
 
             {filteredMeasurements.length === 0 ? (
                 <p className="no-measurements-text">
-                    {(searchTerm || areaPolygon) 
-                        ? 'No measurements for selected stations.' 
+                    {(searchTerm || areaPolygon || startDate || endDate)
+                        ? 'No measurements match your filters.'
                         : 'No measurements available.'}
                 </p>
             ) : (
@@ -139,28 +148,28 @@ function TableView() {
                     </div>
                     <table className="measurement-table">
                         <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Station</th>
-                                <th>Measurement Type</th>
-                                <th>Value</th>
-                                <th>Unit</th>
-                                <th>Date &amp; Time</th>
-                            </tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>Station</th>
+                            <th>Measurement Type</th>
+                            <th>Value</th>
+                            <th>Unit</th>
+                            <th>Date &amp; Time</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {filteredMeasurements.map((measurement) => (
-                                <tr key={measurement.measurementId}>
-                                    <td>{measurement.measurementId}</td>
-                                    <td>{measurement.station}</td>
-                                    <td>{measurement.type}</td>
-                                    <td>{measurement.value}</td>
-                                    <td>{measurement.unit}</td>
-                                    <td>
-                                        {new Date(measurement.measuredAt).toLocaleString('hr-HR')}
-                                    </td>
-                                </tr>
-                            ))}
+                        {filteredMeasurements.map((measurement) => (
+                            <tr key={measurement.measurementId}>
+                                <td>{measurement.measurementId}</td>
+                                <td>{measurement.station}</td>
+                                <td>{measurement.type}</td>
+                                <td>{measurement.value}</td>
+                                <td>{measurement.unit}</td>
+                                <td>
+                                    {new Date(measurement.measuredAt).toLocaleString('hr-HR')}
+                                </td>
+                            </tr>
+                        ))}
                         </tbody>
                     </table>
                 </>
@@ -170,4 +179,5 @@ function TableView() {
         </div>
     );
 }
+
 export default TableView;
