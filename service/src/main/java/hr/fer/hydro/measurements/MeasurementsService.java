@@ -10,10 +10,14 @@ import hr.fer.hydro.measurements.persistence.entities.MeasurementValue;
 import hr.fer.hydro.measurements.persistence.repositories.MeasurementDataPointRepository;
 import hr.fer.hydro.measurements.persistence.repositories.MeasurementTypeRepository;
 import hr.fer.hydro.measurements.persistence.repositories.MeasurementValueRepository;
+import hr.fer.hydro.pagination.HydroPage;
 import hr.fer.hydro.stations.persistence.entities.Station;
 import hr.fer.hydro.stations.persistence.repositories.StationRepository;
+import hr.fer.hydro.util.HydroPageUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +26,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 @Slf4j
 @Service
@@ -37,19 +38,18 @@ public class MeasurementsService {
     private final MeasurementValueRepository measurementValueRepository;
     private final DataMapper dataMapper;
 
-    public List<MeasurementResponseDto> getMeasurements(
+    public HydroPage<MeasurementResponseDto> getMeasurements(
             Long stationId,
             Long typeId,
             OffsetDateTime fromDate,
-            OffsetDateTime toDate) {
+            OffsetDateTime toDate,
+            Pageable pageable) {
 
         // The repository query now handles all NULL checks internally
-        List<MeasurementDataPoint> measurementDataPoints =
-                measurementDataPointRepository.findWithFilters(stationId, typeId, fromDate, toDate);
+        Page<MeasurementDataPoint> measurementDataPoints =
+                measurementDataPointRepository.findWithFilters(stationId, typeId, fromDate, toDate, pageable);
 
-        return measurementDataPoints.stream()
-                .map(dataMapper::toMeasurementResponseDto)
-                .toList();
+        return HydroPageUtil.toPage(measurementDataPoints, dataMapper::toMeasurementResponseDto);
     }
 
     @Transactional

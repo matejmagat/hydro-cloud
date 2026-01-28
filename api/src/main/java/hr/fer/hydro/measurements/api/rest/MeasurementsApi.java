@@ -3,6 +3,7 @@ package hr.fer.hydro.measurements.api.rest;
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
 import hr.fer.hydro.measurements.dto.MeasurementTypeCountDto;
+import hr.fer.hydro.pagination.HydroPage;
 import hr.fer.hydro.stations.dto.StationResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,6 +13,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,13 +38,14 @@ public interface MeasurementsApi {
             @ApiResponse(responseCode = "403", description = "Zabranjen pristup.")
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<MeasurementResponseDto>> getMeasurements(
+    ResponseEntity<HydroPage<MeasurementResponseDto>> getMeasurements(
             @RequestParam(required = false) Long stationId,
 
             @RequestParam(required = false) Long typeId,
 
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate,
+            @ParameterObject Pageable pageable
     );
 
     @Operation(summary = "Kreira novo meteorološko mjerenje")

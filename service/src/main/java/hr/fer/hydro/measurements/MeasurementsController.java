@@ -4,8 +4,10 @@ import hr.fer.hydro.measurements.api.rest.MeasurementsApi;
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
 import hr.fer.hydro.measurements.dto.MeasurementTypeCountDto;
+import hr.fer.hydro.pagination.HydroPage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,10 +22,10 @@ public class MeasurementsController implements MeasurementsApi {
     private final MeasurementsService measurementsService;
 
     @Override
-    public ResponseEntity<List<MeasurementResponseDto>> getMeasurements(Long stationId, Long typeId,
-                                                                        OffsetDateTime fromDate, OffsetDateTime toDate) {
+    public ResponseEntity<HydroPage<MeasurementResponseDto>> getMeasurements(Long stationId, Long typeId,
+                                                                             OffsetDateTime fromDate, OffsetDateTime toDate, Pageable pageable) {
         return ResponseEntity
-                .ok(measurementsService.getMeasurements(stationId, typeId, fromDate, toDate));
+                .ok(measurementsService.getMeasurements(stationId, typeId, fromDate, toDate,pageable));
     }
 
     @Override
