@@ -14,7 +14,7 @@ function Navbar() {
     return (
         <nav className="navbar">
             <Link to="/" className="logo">
-                Hydrological Information WebApp
+                Hydro Cloud
             </Link>
             <div>
                 <Link to="/" className="link">home</Link>

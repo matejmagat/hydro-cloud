@@ -1,0 +1,81 @@
+.table-view-container {
+    padding: 24px;
+    width: 100%;
+    overflow: auto;
+}
+
+.table-view-loading {
+    padding: 24px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-view-error {
+    padding: 24px;
+    width: 100%;
+}
+
+.table-view-error-title {
+    color: red;
+}
+
+.table-view-title {
+    margin-bottom: 16px;
+}
+
+.table-view-info {
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: #666;
+}
+
+.measurement-type-filter {
+    margin-bottom: 20px;
+}
+
+.measurement-type-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.measurement-type-select {
+    width: 300px;
+    padding: 10px;
+    font-size: 1em;
+    font-weight: bold;
+    border: 4px solid #222;
+    border-radius: 0;
+    outline: none;
+    cursor: pointer;
+}
+
+.measurement-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.measurement-table th,
+.measurement-table td {
+    border: 1px solid #222;
+    padding: 8px;
+}
+
+.measurement-table th {
+    background-color: #f0f0f0;
+}
+
+.no-measurements-text {
+    margin-top: 8px;
+}
+
+.retry-button {
+    margin-top: 12px;
+}
+
+.export-button {
+    margin-top: 20px;
+}
