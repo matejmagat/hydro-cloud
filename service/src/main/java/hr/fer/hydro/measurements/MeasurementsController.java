@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Slf4j
@@ -18,9 +19,10 @@ public class MeasurementsController implements MeasurementsApi {
     private final MeasurementsService measurementsService;
 
     @Override
-    public ResponseEntity<List<MeasurementResponseDto>> getMeasurements(Long stationId, Long typeId) {
+    public ResponseEntity<List<MeasurementResponseDto>> getMeasurements(Long stationId, Long typeId,
+                                                                        OffsetDateTime fromDate, OffsetDateTime toDate) {
         return ResponseEntity
-                .ok(measurementsService.getMeasurements(stationId, typeId));
+                .ok(measurementsService.getMeasurements(stationId, typeId, fromDate, toDate));
     }
 
     @Override

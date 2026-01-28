@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,18 +36,15 @@ public class MeasurementsService {
     private final MeasurementValueRepository measurementValueRepository;
     private final DataMapper dataMapper;
 
-    public List<MeasurementResponseDto> getMeasurements(Long stationId, Long typeId) {
-        List<MeasurementDataPoint> measurementDataPoints;
+    public List<MeasurementResponseDto> getMeasurements(
+            Long stationId,
+            Long typeId,
+            OffsetDateTime fromDate,
+            OffsetDateTime toDate) {
 
-        if (isNull(stationId) && isNull(typeId)) {
-            measurementDataPoints = measurementDataPointRepository.findAll();
-        } else if (nonNull(stationId) && isNull(typeId)) {
-            measurementDataPoints = measurementDataPointRepository.findByStationId(stationId);
-        } else if (isNull(stationId) && nonNull(typeId)) {
-            measurementDataPoints = measurementDataPointRepository.findByMeasurementTypeId(typeId);
-        } else {
-            measurementDataPoints = measurementDataPointRepository.findByStationIdAndMeasurementTypeId(stationId, typeId);
-        }
+        // The repository query now handles all NULL checks internally
+        List<MeasurementDataPoint> measurementDataPoints =
+                measurementDataPointRepository.findWithFilters(stationId, typeId, fromDate, toDate);
 
         return measurementDataPoints.stream()
                 .map(dataMapper::toMeasurementResponseDto)

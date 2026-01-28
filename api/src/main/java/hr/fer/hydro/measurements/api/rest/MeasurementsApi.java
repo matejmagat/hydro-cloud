@@ -11,11 +11,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @CrossOrigin
@@ -35,7 +37,10 @@ public interface MeasurementsApi {
     ResponseEntity<List<MeasurementResponseDto>> getMeasurements(
             @RequestParam(required = false) Long stationId,
 
-            @RequestParam(required = false) Long typeId
+            @RequestParam(required = false) Long typeId,
+
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate
     );
 
     @Operation(summary = "Kreira novo meteorološko mjerenje")
