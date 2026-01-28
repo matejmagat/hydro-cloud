@@ -140,7 +140,7 @@ function TableView() {
     };
 
     if (loading) {
-        return <div className="loading-state">Loading data...</div>;
+        return <div className="loading-container">Loading data...</div>;
     }
 
     if (error) {
