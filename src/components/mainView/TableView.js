@@ -48,33 +48,14 @@ function TableView() {
     const [stations, setStations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedMeasurementType, setSelectedMeasurementType] = useState('all');
-
-    // Destructure all filters including new date filters
-    const { searchTerm, areaPolygon, startDate, endDate } = useFilter();
-
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            setLoading(true);
-            // Fetch ALL data and filter on client side as requested
-            const [measurementsData, stationsData] = await Promise.all([
-                measurementsService.getAllMeasurements(),
-                stationsService.getAllStations()
-            ]);
-            setMeasurements(measurementsData);
-            setStations(stationsData);
-            setError(null);
-        } catch (err) {
-            console.error('Failed to fetch data:', err);
-            setError('Error loading data');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [selectedMeasurementType,
+        setSelectedMeasurementType] = useState({"id":null, "name":"all"});
+    const [numOfMeasurements, setNumOfMeasurements] = useState(0);
+    const [typeData, setTypeData] = useState([]);
+    const [numOfPages, setNumOfPages] = useState(1);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [elementsInPage, setElementsInPage] = useState(20);
+    const [isLastPage, setIsLastPage] = useState(false);
 
     const isPointInPolygon = (point, polygon) => {
         if (!polygon || polygon.length < 3) return true;
@@ -89,55 +70,70 @@ function TableView() {
         return inside;
     };
 
-    // 1. Filter Stations based on Search and Area
-    const filteredStations = stations.filter(station => {
-        const matchesSearch = station.stationName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesArea = isPointInPolygon(
-            { lat: station.latitude, lng: station.longitude },
-            areaPolygon
-        );
-        return matchesSearch && matchesArea;
-    });
 
-    const filteredStationNames = filteredStations.map(s => s.stationName);
+    // Destructure all filters including new date filters
+    const { searchTerm, areaPolygon, startDate, endDate } = useFilter();
 
-    // 2. Create 'filteredByStations' which includes Station AND Date filters
-    const filteredByStations = measurements.filter(measurement => {
-        const matchesStation = filteredStationNames.includes(measurement.station);
+    useEffect(() => {
+        fetchData(0);
+    }, [searchTerm, areaPolygon, startDate, endDate, selectedMeasurementType]);
 
-        let matchesDate = true;
-        if (startDate || endDate) {
-            const mDate = new Date(measurement.measuredAt);
-            if (startDate) {
-                const start = new Date(startDate);
-                start.setHours(0, 0, 0, 0);
-                if (mDate < start) matchesDate = false;
+    const fetchData = async (page) => {
+        try {
+            setLoading(true);
+            const searchedStations = await stationsService.searchStations(searchTerm);
+            const filteredStations = searchedStations.filter(station => {
+                return isPointInPolygon(
+                    { lat: station.latitude, lng: station.longitude },
+                    areaPolygon,
+                );
+            });
+            const stationIdsString = filteredStations.map(station => station.stationId).join(',');
+            const measurementsData = await measurementsService.getMeasurements(stationIdsString,
+                selectedMeasurementType["id"], startDate, endDate, page, elementsInPage);
+
+            const typeData = await measurementsService.getMeasurementsTypes(stationIdsString, null,
+                startDate, endDate);
+
+            const totalMeasurements = typeData.reduce((sum, item) =>
+                sum + item.n_occurrences_in_filtered_data, 0);
+
+            const firstPage = measurementsData["firstPage"];
+
+            if (firstPage) {
+                setMeasurements(measurementsData["data"]);
+            } else {
+                setMeasurements(measurements.concat(measurementsData["data"]));
             }
-            if (endDate && matchesDate) {
-                const end = new Date(endDate);
-                end.setHours(23, 59, 59, 999);
-                if (mDate > end) matchesDate = false;
-            }
+            setCurrentPage(page);
+            setNumOfPages(measurementsData["numOfPages"]);
+            setTypeData(typeData);
+            setStations(filteredStations);
+            setNumOfMeasurements(totalMeasurements);
+            setIsLastPage(measurementsData["lastPage"]);
+
+
+            // setElementsInPage(measurementsData["elementsInPage"]);
+
+            setError(null);
+        } catch (err) {
+            console.error('Failed to fetch data:', err);
+            setError('Error loading data');
+        } finally {
+            setLoading(false);
         }
+    };
 
-        return matchesStation && matchesDate;
-    });
 
-    // 3. Final list filtered by Type
-    const filteredMeasurements = filteredByStations.filter(measurement =>
-        selectedMeasurementType === 'all' || measurement.type === selectedMeasurementType
-    );
 
-    const availableMeasurementTypes = [...new Set(filteredByStations.map(m => m.type))].sort();
+
+    // const availableMeasurementTypes = [...new Set(filteredByStations.map(m => m.type))].sort();
 
     // Handler for the Export button
     const handleExport = () => {
-        // Optional: formatting data before export (e.g., formatting dates)
-        // If you want raw data, pass filteredMeasurements directly.
-        // Here is a version that formats the date to be readable in Excel:
-        const dataToExport = filteredMeasurements.map(m => ({
-            ...m,
-            measuredAt: new Date(m.measuredAt).toLocaleString('hr-HR')
+       const dataToExport = measurements.map(m => ({
+         ...m,
+           measuredAt: new Date(m.measuredAt).toLocaleString('hr-HR')
         }));
 
         downloadCSV(dataToExport, 'measurements-export.csv');
@@ -155,10 +151,10 @@ function TableView() {
         <div className="table-view-container">
             <h2 className="table-view-title">
                 Measurements
-                {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${filteredStations.length} stations)`}
+                {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${stations.length} stations)`}
             </h2>
 
-            {filteredByStations.length > 0 && (
+            {stations.length > 0 && (
                 <div className="measurement-type-filter">
                     <label
                         htmlFor="measurementType"
@@ -166,26 +162,64 @@ function TableView() {
                     >
                         Measurement Type
                     </label>
-                    <select
-                        id="measurementType"
-                        value={selectedMeasurementType}
-                        onChange={(e) => setSelectedMeasurementType(e.target.value)}
-                        className="measurement-type-select"
-                    >
-                        <option value="all">All Types ({filteredByStations.length} measurements)</option>
-                        {availableMeasurementTypes.map(type => {
-                            const count = filteredByStations.filter(m => m.type === type).length;
-                            return (
-                                <option key={type} value={type}>
-                                    {type} ({count} measurements)
-                                </option>
-                            );
-                        })}
-                    </select>
+                    <div className="select-and-button">
+                        <select
+                            id="measurementType"
+                            // Bind value to the ID, not the name (it's safer/unique)
+                            value={selectedMeasurementType.id || "all"}
+                            onChange={(e) => {
+                                const selectedId = e.target.value;
+
+                                if (selectedId === "all") {
+                                    setSelectedMeasurementType({ id: null, name: "All Types" });
+                                } else {
+                                    // Find the specific type object to get the name back
+                                    const type = typeData.find(t => String(t.measurement_type_id) === selectedId);
+                                    if (type) {
+                                        setSelectedMeasurementType({
+                                            id: type.measurement_type_id,
+                                            name: type.measurement_type_name
+                                        });
+                                    }
+                                }
+                            }}
+                            className="measurement-type-select"
+                        >
+                            {/* Ideally calculate the total count sum for 'All' */}
+                            <option value="all">All Types ({numOfMeasurements} measurements)</option>
+
+                            {typeData.map(type => {
+                                const count = type["n_occurrences_in_filtered_data"];
+                                const id = type["measurement_type_id"];
+                                const name = type["measurement_type_name"];
+
+                                return (
+                                    <option
+                                        key={id}       // Unique key is required for React lists
+                                        value={id}     // Set the value to the ID
+                                    >
+                                        {name} ({count} measurements)
+                                    </option>
+                                );
+                            })}
+                        </select>
+
+                        <button
+                            className="export-button"
+                            onClick={handleExport}
+                            disabled={measurements.length === 0}
+                            style={measurements.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        >
+                            Export Data
+                        </button>
+                    </div>
+
+
+
                 </div>
             )}
 
-            {filteredMeasurements.length === 0 ? (
+            {measurements.length === 0 ? (
                 <p className="no-measurements-text">
                     {(searchTerm || areaPolygon || startDate || endDate)
                         ? 'No measurements match your filters.'
@@ -194,7 +228,7 @@ function TableView() {
             ) : (
                 <>
                     <div className="table-view-info">
-                        Showing {filteredMeasurements.length} of {measurements.length} measurements
+                        Showing page {currentPage + 1} of {numOfPages}
                     </div>
                     <table className="measurement-table">
                         <thead>
@@ -208,7 +242,7 @@ function TableView() {
                         </tr>
                         </thead>
                         <tbody>
-                        {filteredMeasurements.map((measurement) => (
+                        {measurements.map((measurement) => (
                             <tr key={measurement.measurementId}>
                                 <td>{measurement.measurementId}</td>
                                 <td>{measurement.station}</td>
@@ -225,15 +259,18 @@ function TableView() {
                 </>
             )}
 
-            {/* UPDATED EXPORT BUTTON */}
-            <button
-                className="export-button"
-                onClick={handleExport}
-                disabled={filteredMeasurements.length === 0}
-                style={filteredMeasurements.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-            >
-                Export Data
-            </button>
+            {isLastPage ? null :
+                <button onClick={() => {
+                    if (currentPage < numOfPages - 1) {
+                        // setCurrentPage(currentPage + 1);
+                        fetchData(currentPage + 1);
+                    }
+                }}>
+                    Load More
+                </button>
+            }
+
+
         </div>
     );
 }

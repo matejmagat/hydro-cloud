@@ -34,6 +34,11 @@
 .measurement-type-filter {
     margin-bottom: 20px;
 }
+.select-and-button {
+    display: flex;
+    gap: 40vw;
+}
+
 
 .measurement-type-label {
     display: block;
