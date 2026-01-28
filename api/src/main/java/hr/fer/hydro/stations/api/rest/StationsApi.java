@@ -22,7 +22,7 @@ import java.util.List;
 @RequestMapping(value = "/stations")
 public interface StationsApi {
 
-    @Operation(summary = "Dohvat svih meteoroloških stanica")
+    @Operation(summary = "Dohvat svih meteoroloških stanica ili pretraga po imenu")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Popis meteoroloških stanica uspješno dohvaćen.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -31,7 +31,10 @@ public interface StationsApi {
             @ApiResponse(responseCode = "403", description = "Zabranjen pristup.")
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<StationResponseDto>> getStations();
+    ResponseEntity<List<StationResponseDto>> getStations(
+            @Parameter(description = "Naziv stanice za pretragu")
+            @RequestParam(required = false) String search
+    );
 
     @Operation(summary = "Kreira novu meteorološku stanicu")
     @ApiResponses(value = {
@@ -69,7 +72,6 @@ public interface StationsApi {
             @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
             @ApiResponse(responseCode = "403", description = "Zabranjen pristup."),
             @ApiResponse(responseCode = "404", description = "Meteorološka stanica s danim ID-jem ne postoji.")
-
     })
     @DeleteMapping(value = "/{stationId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

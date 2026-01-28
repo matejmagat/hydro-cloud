@@ -28,8 +28,13 @@ public class StationsService {
     private final StationRepository stationRepository;
     private final DataMapper dataMapper;
 
-    public List<StationResponseDto> getStations() {
-        List<Station> stations = stationRepository.findAll();
+    public List<StationResponseDto> getStations(String search) {
+        List<Station> stations;
+        if (search != null && !search.isBlank()) {
+            stations = stationRepository.findByNameContainingIgnoreCase(search);
+        } else {
+            stations = stationRepository.findAll();
+        }
 
         return stations.stream()
                 .map(dataMapper::toStationResponseDto)
@@ -49,14 +54,13 @@ public class StationsService {
                 OffsetDateTime.now(),
                 OffsetDateTime.now().plusYears(10)
         );
-        stationRepository.save(station);
 
+        stationRepository.save(station);
         return dataMapper.toStationResponseDto(station);
     }
 
     public StationResponseDto getStation(Long stationId) {
         Optional<Station> station = stationRepository.findById(stationId);
-
         return station.map(dataMapper::toStationResponseDto)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Station with stationId " + stationId + " not found"

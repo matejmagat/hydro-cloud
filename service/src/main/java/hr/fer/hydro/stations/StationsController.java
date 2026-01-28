@@ -19,9 +19,9 @@ public class StationsController implements StationsApi {
     private final StationsService stationsService;
 
     @Override
-    public ResponseEntity<List<StationResponseDto>> getStations() {
+    public ResponseEntity<List<StationResponseDto>> getStations(String search) {
         return ResponseEntity
-                .ok(stationsService.getStations());
+                .ok(stationsService.getStations(search));
     }
 
     @Override
