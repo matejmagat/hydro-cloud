@@ -1,0 +1,127 @@
+/* dataManager.css */
+
+.dm-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background-color: #f1f1f1;
+    border: 1px solid #dcdcdc;
+    border-radius: 3px;
+    padding: 20px 40px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.dm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.dm-title {
+    font-size: 24px;
+    font-weight: 300;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dm-icon {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.dm-report-btn {
+    background: transparent;
+    border: 1px solid #d9534f;
+    color: #d9534f;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.dm-report-btn:hover {
+    background-color: #d9534f;
+    color: white;
+}
+
+/* Drop Zone */
+.dm-drop-zone {
+    border: 3px dashed #ccc;
+    border-radius: 20px;
+    background-color: #fafafa;
+    padding: 60px 20px;
+    text-align: center;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.dm-drop-zone.active {
+    border-color: #27ae60;
+    background-color: #eafaf1;
+}
+
+.dm-cloud-icon {
+    font-size: 64px;
+    color: #999;
+    margin-bottom: 15px;
+}
+
+.dm-drop-content h3 {
+    font-size: 22px;
+    font-weight: 300;
+    color: #ccc; /* Light grey text like the image */
+    margin: 0 0 25px 0;
+}
+
+/* Import Button */
+.dm-import-btn {
+    background: transparent;
+    border: 2px solid #27ae60;
+    color: #27ae60;
+    padding: 10px 40px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.2s;
+}
+
+.dm-import-btn:hover {
+    background-color: #27ae60;
+    color: white;
+}
+
+.dm-file-selected {
+    margin-top: 20px;
+    color: #333;
+    font-size: 14px;
+}
+
+/* Footer Info */
+.dm-footer-info {
+    margin-top: 25px;
+    color: #666;
+    font-size: 13px;
+}
+
+/* Error Message */
+.dm-error-container {
+    height: 40px; /* Reserve space */
+    margin-top: 10px;
+}
+
+.dm-error-message {
+    color: #d9534f;
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+}
