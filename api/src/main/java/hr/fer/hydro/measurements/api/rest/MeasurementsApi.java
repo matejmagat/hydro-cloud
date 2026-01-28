@@ -2,6 +2,7 @@ package hr.fer.hydro.measurements.api.rest;
 
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
+import hr.fer.hydro.measurements.dto.MeasurementTypeCountDto;
 import hr.fer.hydro.stations.dto.StationResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -87,5 +88,21 @@ public interface MeasurementsApi {
     void deleteMeasurement(
             @Parameter(description = "ID meteorološkog mjerenja", required = true, example = "57")
             @PathVariable Long measurementId
+    );
+
+    @Operation(summary = "Dohvat statistike tipova mjerenja (broj pojavljivanja)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Statistika uspješno dohvaćena.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            array = @ArraySchema(schema = @Schema(implementation = MeasurementTypeCountDto.class)))),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
+            @ApiResponse(responseCode = "403", description = "Zabranjen pristup.")
+    })
+    @GetMapping(value = "/types", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<MeasurementTypeCountDto>> getMeasurementTypesStatistics(
+            @RequestParam(required = false) Long stationId,
+            @RequestParam(required = false) Long typeId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate
     );
 }

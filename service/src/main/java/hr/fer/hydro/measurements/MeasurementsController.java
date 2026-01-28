@@ -3,6 +3,7 @@ package hr.fer.hydro.measurements;
 import hr.fer.hydro.measurements.api.rest.MeasurementsApi;
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
+import hr.fer.hydro.measurements.dto.MeasurementTypeCountDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,18 @@ public class MeasurementsController implements MeasurementsApi {
                                                                         OffsetDateTime fromDate, OffsetDateTime toDate) {
         return ResponseEntity
                 .ok(measurementsService.getMeasurements(stationId, typeId, fromDate, toDate));
+    }
+
+    @Override
+    public ResponseEntity<List<MeasurementTypeCountDto>> getMeasurementTypesStatistics(
+            Long stationId,
+            Long typeId,
+            OffsetDateTime fromDate,
+            OffsetDateTime toDate) {
+
+        return ResponseEntity.ok(
+                measurementsService.getMeasurementTypesStatistics(stationId, typeId, fromDate, toDate)
+        );
     }
 
     @Override

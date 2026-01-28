@@ -3,6 +3,7 @@ package hr.fer.hydro.measurements;
 import hr.fer.hydro.DataMapper;
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
+import hr.fer.hydro.measurements.dto.MeasurementTypeCountDto;
 import hr.fer.hydro.measurements.persistence.entities.MeasurementDataPoint;
 import hr.fer.hydro.measurements.persistence.entities.MeasurementType;
 import hr.fer.hydro.measurements.persistence.entities.MeasurementValue;
@@ -93,5 +94,14 @@ public class MeasurementsService {
             );
         }
         measurementDataPointRepository.deleteById(measurementId);
+    }
+
+    public List<MeasurementTypeCountDto> getMeasurementTypesStatistics(
+            Long stationId,
+            Long typeId,
+            OffsetDateTime fromDate,
+            OffsetDateTime toDate) {
+
+        return measurementDataPointRepository.countTypesWithFilters(stationId, typeId, fromDate, toDate);
     }
 }
