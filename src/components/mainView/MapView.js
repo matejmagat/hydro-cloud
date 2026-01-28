@@ -142,23 +142,35 @@ function MapView() {
     const [tempMarker, setTempMarker] = useState(null);
     const [creating, setCreating] = useState(false);
     const [currentPoints, setCurrentPoints] = useState(0);
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+    // Add debounce effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300); // 300ms delay
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     useEffect(() => {
-        fetchStations();
-    }, []);
+        const fetchStations = async () => {
+            try {
+                setLoading(true);
+                const data = debouncedSearchTerm
+                    ? await stationsService.searchStations(debouncedSearchTerm)
+                    : await stationsService.getAllStations();
+                setStations(data);
+            } catch (error) {
+                console.error('Failed to fetch stations:', error);
+                alert('Error loading stations');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const fetchStations = async () => {
-        try {
-            setLoading(true);
-            const data = await stationsService.getAllStations();
-            setStations(data);
-        } catch (error) {
-            console.error('Failed to fetch stations:', error);
-            alert('Error loading stations');
-        } finally {
-            setLoading(false);
-        }
-    };
+        fetchStations();
+    }, [debouncedSearchTerm]);
 
     const handleDeleteStation = async (stationId, stationName) => {
         if (!window.confirm(`Are you sure you want to delete station "${stationName}"?`)) {
@@ -260,12 +272,10 @@ function MapView() {
     };
 
     const filteredStations = stations.filter(station => {
-        const matchesSearch = station.stationName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesArea = isPointInPolygon(
+        return isPointInPolygon(
             { lat: station.latitude, lng: station.longitude },
             areaPolygon,
         );
-        return matchesSearch && matchesArea;
     });
 
     if (loading) {
