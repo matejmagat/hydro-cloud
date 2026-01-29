@@ -11,7 +11,7 @@ function AdminPage() {
     return (
 
         <div>
-            <Tabs tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab} />
+            <Tabs tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab}/>
             {activeTab === 'data' ? <DataManager /> : <UserManager />}
         </div>
     );

@@ -39,12 +39,12 @@
 /* Tab Selector (Segmented Control style) */
 .tab-selector {
     display: flex;
-    gap: 0;
+    flex-direction: row;
     padding: 4px;
-    margin: 16px 24px 0 24px;
+    gap: 16px;
+    /*margin: 16px 24px 0 24px;*/
     background: #e5e5ea; /* Darker gray track */
     border-radius: 8px;
-    width: fit-content;
     border: none;
 }
 
