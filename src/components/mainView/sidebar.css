@@ -1,85 +1,92 @@
 .sidebar {
-    width: 250px;
-    min-width: 250px;
-    max-width: 250px;
+    width: 320px; /* Slightly wider for better breathing room */
+    min-width: 320px;
+    max-width: 320px;
     flex-shrink: 0;
-    border-right: 2px solid #222;
-    padding: 28px 22px;
+    background: var(--system-white);
+    border-right: 1px solid var(--system-border);
+    padding: 32px 24px;
     box-sizing: border-box;
-    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .sidebar-section {
-    margin-bottom: 24px;
+    margin-bottom: 0; /* Handled by gap above */
 }
 
 .sidebar-label {
+    /* Inherits from common.css label, but ensures consistency */
     display: block;
-    margin-bottom: 6px;
-    font-weight: bold;
-}
-
-.sidebar-input {
-    width: 100%;
-    padding: 6px 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.area-button {
-    margin-top: 8px;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.area-button-blue {
-    background-color: #2196F3;
-}
-
-.area-button-orange {
-    background-color: #ff9800;
-}
-
-.area-active-info {
-    margin-top: 8px;
-    font-size: 0.85em;
-    color: #4CAF50;
-    font-weight: normal;
-}
-
-.time-period-title {
-    font-weight: bold;
-    font-size: 1.1em;
     margin-bottom: 8px;
 }
 
+.sidebar-input {
+    /* Inherits styling from common.css input */
+}
+
+.area-button {
+    /* Base styles inherit from button */
+    margin-top: 0;
+    font-size: 13px;
+}
+
+.area-button-blue {
+    background-color: var(--system-blue);
+}
+
+.area-button-orange {
+    background-color: #ff9f0a; /* Apple system orange */
+}
+
+.area-active-info {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #34c759; /* Apple system green */
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+
+/* Time Period Section */
+.time-period-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--system-text);
+}
+
 .time-period-row {
-    display: block;
-    justify-content: flex-start;
-    gap: 18px;
-    margin: 12px 0 0 0;
+    display: flex; /* Changed from block to flex for better alignment */
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 0;
 }
 
 .time-period-label {
-    margin-bottom: 5px;
-    font-weight: bold;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--system-text-secondary);
+    margin-bottom: 4px;
+    font-weight: 600;
 }
 
 .time-period-input {
-    padding: 4px 6px;
+    width: 100%;
+    padding: 8px;
+    font-size: 13px;
 }
 
 .reset-button {
-    margin-top: 12px;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    background-color: #f44336;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
+    margin-top: auto; /* Push to bottom if needed */
+    background-color: transparent;
+    color: #ff3b30; /* Apple system red */
+    border: 1px solid rgba(255, 59, 48, 0.3);
+}
+
+.reset-button:hover {
+    background-color: rgba(255, 59, 48, 0.05);
+    transform: none;
 }

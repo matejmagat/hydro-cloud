@@ -3,8 +3,9 @@ import React from 'react';
 import './sidebar.css';
 import '../common.css';
 import { useFilter } from '../../context/FilterContext';
+import Tabs from "../navigation/Tabs";
 
-function Sidebar() {
+function Sidebar({ tabs, activeTab, setActiveTab }) {
     const {
         searchTerm,
         setSearchTerm,
@@ -49,6 +50,7 @@ function Sidebar() {
 
     return (
         <aside className="sidebar">
+            <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
             <div className="sidebar-section">
                 <label className="sidebar-label">Station name</label>
                 <input

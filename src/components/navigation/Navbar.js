@@ -17,12 +17,12 @@ function Navbar() {
                 Hydro Cloud
             </Link>
             <div>
-                <Link to="/" className="link">home</Link>
-                <Link to="/admin" className="link">admin</Link>
+                <Link to="/" className="link">Home</Link>
+                <Link to="/admin" className="link">Admin</Link>
                 {isLoggedIn ? (
-                    <Link to="/profile" className="link">profile</Link>
+                    <Link to="/profile" className="link">Profile</Link>
                 ) : (
-                    <Link to="/login" className="link">login</Link>
+                    <Link to="/login" className="link">Login</Link>
                 )}
             </div>
         </nav>

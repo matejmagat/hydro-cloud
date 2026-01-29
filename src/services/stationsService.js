@@ -19,6 +19,24 @@ export const stationsService = {
         return await response.json();
     },
 
+    async searchStations(searchTerm) {
+        const token = localStorage.getItem('authToken');
+
+        const response = await fetch(`${API_URL}/stations?search=${searchTerm}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch station that matches "${searchTerm}"`);
+        }
+
+        return await response.json();
+    },
+
     async getStationById(stationId) {
         const token = localStorage.getItem('authToken');
         

@@ -1,5 +1,5 @@
+// ChartView.js
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-
 import { Line, Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -15,7 +15,6 @@ import {
 import { measurementsService } from '../../services/measurementsService';
 import { stationsService } from '../../services/stationsService';
 import { useFilter } from '../../context/FilterContext';
-// Reuse table styles
 import './tableView.css';
 
 // Register chart components
@@ -30,106 +29,153 @@ ChartJS.register(
     Legend
 );
 
+// OPTIMIZATION 1: Move static helper outside component
+const isPointInPolygon = (point, polygon) => {
+    if (!polygon || polygon.length < 3) return true;
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat, yi = polygon[i].lng;
+        const xj = polygon[j].lat, yj = polygon[j].lng;
+        const intersect = ((yi > point.lng) !== (yj > point.lng))
+            && (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+};
+
 function ChartView() {
+    // State
     const [measurements, setMeasurements] = useState([]);
     const [stations, setStations] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [typeData, setTypeData] = useState([]);
+    const [loading, setLoading] = useState(true);          // Chart loading
+    const [stationsLoading, setStationsLoading] = useState(false); // Station search loading
     const [error, setError] = useState(null);
-    const [selectedMeasurementType, setSelectedMeasurementType] = useState('all');
+    const [numOfMeasurements, setNumOfMeasurements] = useState(0);
+
+    const [selectedMeasurementType, setSelectedMeasurementType] = useState({ id: null, name: 'all' });
     const [chartType, setChartType] = useState('line');
 
-    // Get all filters including startDate and endDate
+    // Context
     const { searchTerm, areaPolygon, startDate, endDate } = useFilter();
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    // Refs
+    const chartRef = useRef(null);
+    const abortControllerRef = useRef(null);
 
-    const fetchData = async () => {
+    // OPTIMIZATION 2: Independent Station Fetching
+    useEffect(() => {
+        let active = true;
+        const fetchStations = async () => {
+            try {
+                setStationsLoading(true);
+                const searchedStations = await stationsService.searchStations(searchTerm);
+
+                if (!active) return;
+
+                const filteredStations = searchedStations.filter(station => {
+                    return isPointInPolygon(
+                        { lat: station.latitude, lng: station.longitude },
+                        areaPolygon,
+                    );
+                });
+                setStations(filteredStations);
+            } catch (err) {
+                console.error('Failed to fetch stations:', err);
+                if (active) setError('Error loading stations');
+            } finally {
+                if (active) setStationsLoading(false);
+            }
+        };
+
+        fetchStations();
+        return () => { active = false; };
+    }, [searchTerm, areaPolygon]);
+
+    // OPTIMIZATION 3: Memoize station IDs
+    const stationIdsString = useMemo(() =>
+            stations.map(s => s.stationId).join(','),
+        [stations]);
+
+    // OPTIMIZATION 4: Optimized Chart Data Fetching
+    const fetchChartData = useCallback(async () => {
+        // Cancel previous request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        const signal = abortControllerRef.current.signal;
+
+        // Early exit if no stations (and not currently loading them)
+        if (stations.length === 0 && !stationsLoading) {
+            setMeasurements([]);
+            setTypeData([]);
+            setNumOfMeasurements(0);
+            return;
+        }
+
         try {
             setLoading(true);
-            const [measurementsData, stationsData] = await Promise.all([
-                measurementsService.getAllMeasurements(),
-                stationsService.getAllStations()
+
+            // OPTIMIZATION 5: Parallel Fetching
+            const [measurementsResponse, typesResponse] = await Promise.all([
+                measurementsService.getMeasurements(
+                    stationIdsString,
+                    selectedMeasurementType.id,
+                    startDate,
+                    endDate,
+                    0,    // Page 0
+                    1000  // Limit 1000 for chart
+                ),
+                measurementsService.getMeasurementsTypes(
+                    stationIdsString,
+                    null,
+                    startDate,
+                    endDate
+                )
             ]);
-            setMeasurements(measurementsData);
-            setStations(stationsData);
+
+            if (signal.aborted) return;
+
+            const totalMeasurements = typesResponse.reduce((sum, item) =>
+                sum + item.n_occurrences_in_filtered_data, 0);
+
+            setMeasurements(measurementsResponse.data);
+            setTypeData(typesResponse);
+            setNumOfMeasurements(totalMeasurements);
             setError(null);
+
         } catch (err) {
-            console.error('Failed to fetch data:', err);
-            setError('Error loading data');
+            if (err.name !== 'AbortError') {
+                console.error('Failed to fetch chart data:', err);
+                setError('Error loading data');
+            }
         } finally {
-            setLoading(false);
-        }
-    };
-
-    const isPointInPolygon = (point, polygon) => {
-        if (!polygon || polygon.length < 3) return true;
-        let inside = false;
-        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-            const xi = polygon[i].lat, yi = polygon[i].lng;
-            const xj = polygon[j].lat, yj = polygon[j].lng;
-            const intersect = ((yi > point.lng) !== (yj > point.lng))
-                && (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
-        }
-        return inside;
-    };
-
-    // 1. Filter Stations based on Search and Area
-    const filteredStations = stations.filter(station => {
-        const matchesSearch = station.stationName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesArea = isPointInPolygon(
-            { lat: station.latitude, lng: station.longitude },
-            areaPolygon
-        );
-        return matchesSearch && matchesArea;
-    });
-
-    const filteredStationNames = filteredStations.map(s => s.stationName);
-
-    // 2. Filter Measurements by Station AND Date
-    const filteredByStations = measurements.filter(measurement => {
-        const matchesStation = filteredStationNames.includes(measurement.station);
-
-        let matchesDate = true;
-        if (startDate || endDate) {
-            const mDate = new Date(measurement.measuredAt);
-            if (startDate) {
-                const start = new Date(startDate);
-                start.setHours(0, 0, 0, 0);
-                if (mDate < start) matchesDate = false;
-            }
-            if (endDate && matchesDate) {
-                const end = new Date(endDate);
-                end.setHours(23, 59, 59, 999);
-                if (mDate > end) matchesDate = false;
+            if (!signal.aborted) {
+                setLoading(false);
             }
         }
+    }, [stationIdsString, selectedMeasurementType, startDate, endDate, stationsLoading, stations.length]);
 
-        return matchesStation && matchesDate;
-    });
+    // Trigger fetch when dependencies change
+    useEffect(() => {
+        if (!stationsLoading) {
+            fetchChartData();
+        }
+    }, [fetchChartData, stationsLoading]);
 
-    // 3. Filter Measurements by Type
-    const filteredMeasurements = filteredByStations.filter(measurement =>
-        selectedMeasurementType === 'all' || measurement.type === selectedMeasurementType
-    );
-
-    const availableMeasurementTypes = [...new Set(filteredByStations.map(m => m.type))].sort();
-
-    // 4. Prepare Chart Data
+    // Prepare Chart Data
     const chartData = useMemo(() => {
-        if (filteredMeasurements.length === 0) return null;
+        if (measurements.length === 0) return null;
 
-        // Extract unique sorted timestamps for X-axis labels
-        const labels = [...new Set(filteredMeasurements.map(m => m.measuredAt))]
+        const labels = [...new Set(measurements.map(m => m.measuredAt))]
             .sort()
             .map(dateStr => new Date(dateStr).toLocaleString('hr-HR'));
 
         const groupedData = {};
 
-        filteredMeasurements.forEach(m => {
-            const labelKey = selectedMeasurementType === 'all'
+        measurements.forEach(m => {
+            const labelKey = selectedMeasurementType.id === null
                 ? `${m.station} (${m.type})`
                 : m.station;
 
@@ -164,17 +210,16 @@ function ChartView() {
         });
 
         return { labels, datasets };
-    }, [filteredMeasurements, selectedMeasurementType]);
+    }, [measurements, selectedMeasurementType]);
 
-
-    const chartOptions = {
+    const chartOptions = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: { position: 'top' },
             title: {
                 display: true,
-                text: `Measurements Chart (${selectedMeasurementType === 'all' ? 'Mixed Types' : selectedMeasurementType})`,
+                text: `Measurements Chart (${selectedMeasurementType.name})`,
             },
             tooltip: {
                 mode: 'index',
@@ -186,62 +231,74 @@ function ChartView() {
                 beginAtZero: false,
                 title: {
                     display: true,
-                    text: selectedMeasurementType === 'all' ? 'Value' : filteredMeasurements[0]?.unit || 'Value'
+                    text: selectedMeasurementType.id === null ? 'Value' : measurements[0]?.unit || 'Value'
                 }
             }
         }
-    };
-
-    const chartRef = useRef(null);
+    }), [selectedMeasurementType, measurements]);
 
     const handleExport = useCallback(() => {
         if (chartRef.current) {
             const link = document.createElement('a');
-            link.download = `chart-${selectedMeasurementType}-${new Date().toISOString().slice(0, 10)}.png`;
+            link.download = `chart-${selectedMeasurementType.name}-${new Date().toISOString().slice(0, 10)}.png`;
             link.href = chartRef.current.toBase64Image();
             link.click();
         }
     }, [selectedMeasurementType]);
 
+    const isGlobalLoading = loading || stationsLoading;
 
-    if (loading) return <div className="loading-state"><h2>Loading charts...</h2></div>;
+    if (isGlobalLoading && measurements.length === 0) {
+        return <div className="loading-container">Loading charts...</div>;
+    }
+
     if (error) return <div className="error-state"><h2>{error}</h2></div>;
 
     return (
         <div className="table-view-container">
             <h2 className="table-view-title">
                 Measurements Chart
-                {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${filteredStations.length} stations)`}
+                {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${stations.length} stations)`}
             </h2>
 
-            {/* Controls Section */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-
-                {filteredByStations.length > 0 && (
-                    <div className="measurement-type-filter" style={{margin: 0}}>
+                {stations.length > 0 && (
+                    <div className="measurement-type-filter" style={{ margin: 0 }}>
                         <label htmlFor="measurementType" className="measurement-type-label">
                             Measurement Type
                         </label>
                         <select
                             id="measurementType"
-                            value={selectedMeasurementType}
-                            onChange={(e) => setSelectedMeasurementType(e.target.value)}
-                            className="measurement-type-select"
+                            value={selectedMeasurementType.id || "all"}
+                            onChange={(e) => {
+                                const selectedId = e.target.value;
+                                if (selectedId === "all") {
+                                    setSelectedMeasurementType({ id: null, name: "All Types" });
+                                } else {
+                                    const type = typeData.find(t => String(t.measurement_type_id) === selectedId);
+                                    if (type) {
+                                        setSelectedMeasurementType({
+                                            id: type.measurement_type_id,
+                                            name: type.measurement_type_name
+                                        });
+                                    }
+                                }
+                            }}
                         >
-                            <option value="all">All Types ({filteredByStations.length})</option>
-                            {availableMeasurementTypes.map(type => {
-                                const count = filteredByStations.filter(m => m.type === type).length;
-                                return (
-                                    <option key={type} value={type}>
-                                        {type} ({count})
-                                    </option>
-                                );
-                            })}
+                            <option value="all">All Types ({numOfMeasurements})</option>
+                            {typeData.map(type => (
+                                <option
+                                    key={type.measurement_type_id}
+                                    value={type.measurement_type_id}
+                                >
+                                    {type.measurement_type_name} ({type.n_occurrences_in_filtered_data})
+                                </option>
+                            ))}
                         </select>
                     </div>
                 )}
 
-                <div className="measurement-type-filter" style={{margin: 0}}>
+                <div className="measurement-type-filter" style={{ margin: 0 }}>
                     <label htmlFor="chartType" className="measurement-type-label">
                         Chart Type
                     </label>
@@ -249,12 +306,21 @@ function ChartView() {
                         id="chartType"
                         value={chartType}
                         onChange={(e) => setChartType(e.target.value)}
-                        className="measurement-type-select"
+
                     >
                         <option value="line">Line Chart</option>
                         <option value="bar">Bar Chart</option>
                     </select>
                 </div>
+                <button
+                    className="export-button"
+                    style={{ marginTop: '20px' }}
+                    onClick={handleExport}
+                    disabled={!chartData || chartData.datasets.length === 0}
+                >
+                    Export Chart
+                </button>
+
             </div>
 
             <div style={{ height: '400px', width: '100%', backgroundColor: '#fff', padding: '10px', borderRadius: '4px' }}>
@@ -271,13 +337,6 @@ function ChartView() {
                 )}
             </div>
 
-            <button
-                className="export-button"
-                style={{marginTop: '20px'}}
-                onClick={handleExport}
-            >
-                Export Chart
-            </button>
 
         </div>
     );
