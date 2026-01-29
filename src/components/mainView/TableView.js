@@ -1,38 +1,41 @@
 // TableView.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { measurementsService } from '../../services/measurementsService';
 import { stationsService } from '../../services/stationsService';
 import { useFilter } from '../../context/FilterContext';
 import './tableView.css';
 
-// Helper function to handle CSV generation and download
+// OPTIMIZATION 1: Move static helpers outside component to prevent recreation on render
+const isPointInPolygon = (point, polygon) => {
+    if (!polygon || polygon.length < 3) return true;
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat, yi = polygon[i].lng;
+        const xj = polygon[j].lat, yj = polygon[j].lng;
+        const intersect = ((yi > point.lng) !== (yj > point.lng)) &&
+            (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+};
+
 const downloadCSV = (data, fileName = 'export.csv') => {
     if (!data || data.length === 0) {
         alert("No data to export");
         return;
     }
-
-    // 1. Extract headers from the first object
     const headers = Object.keys(data[0]);
-
-    // 2. Convert data to CSV string
     const csvContent = [
-        headers.join(','), // Header row
+        headers.join(','),
         ...data.map(row =>
             headers.map(header => {
                 let value = row[header] === null || row[header] === undefined ? '' : row[header];
-
-                // Escape quotes and wrap in quotes if the value contains a comma, newline, or quote
                 const stringValue = value.toString().replace(/"/g, '""');
-                if (stringValue.search(/("|,|\n)/g) >= 0) {
-                    return `"${stringValue}"`;
-                }
-                return stringValue;
+                return stringValue.search(/("|,|\n)/g) >= 0 ? `"${stringValue}"` : stringValue;
             }).join(',')
         )
     ].join('\n');
 
-    // 3. Create a Blob and trigger download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -44,12 +47,13 @@ const downloadCSV = (data, fileName = 'export.csv') => {
 };
 
 function TableView() {
+    // State
     const [measurements, setMeasurements] = useState([]);
     const [stations, setStations] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true); // Global loading state
+    const [stationsLoading, setStationsLoading] = useState(false); // Specific to station search
     const [error, setError] = useState(null);
-    const [selectedMeasurementType,
-        setSelectedMeasurementType] = useState({"id":null, "name":"all"});
+    const [selectedMeasurementType, setSelectedMeasurementType] = useState({ "id": null, "name": "all" });
     const [numOfMeasurements, setNumOfMeasurements] = useState(0);
     const [typeData, setTypeData] = useState([]);
     const [numOfPages, setNumOfPages] = useState(1);
@@ -57,89 +61,142 @@ function TableView() {
     const [elementsInPage, setElementsInPage] = useState(20);
     const [isLastPage, setIsLastPage] = useState(false);
 
-    const isPointInPolygon = (point, polygon) => {
-        if (!polygon || polygon.length < 3) return true;
-        let inside = false;
-        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-            const xi = polygon[i].lat, yi = polygon[i].lng;
-            const xj = polygon[j].lat, yj = polygon[j].lng;
-            const intersect = ((yi > point.lng) !== (yj > point.lng)) &&
-                (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
-        }
-        return inside;
-    };
+    // Refs for cancellation
+    const abortControllerRef = useRef(null);
 
-
-    // Destructure all filters including new date filters
+    // Context
     const { searchTerm, areaPolygon, startDate, endDate } = useFilter();
 
+    // OPTIMIZATION 2: Separate Station Fetching
+    // Only runs when search/area filters change. Does NOT run on pagination or date change.
     useEffect(() => {
-        fetchData(0);
-    }, [searchTerm, areaPolygon, startDate, endDate, selectedMeasurementType]);
+        let active = true;
+        const fetchStations = async () => {
+            try {
+                setStationsLoading(true);
+                const searchedStations = await stationsService.searchStations(searchTerm);
 
-    const fetchData = async (page) => {
+                if (!active) return;
+
+                const filteredStations = searchedStations.filter(station => {
+                    return isPointInPolygon(
+                        { lat: station.latitude, lng: station.longitude },
+                        areaPolygon,
+                    );
+                });
+                setStations(filteredStations);
+            } catch (err) {
+                console.error('Failed to fetch stations:', err);
+                if (active) setError('Error loading stations');
+            } finally {
+                if (active) setStationsLoading(false);
+            }
+        };
+
+        fetchStations();
+        return () => { active = false; };
+    }, [searchTerm, areaPolygon]);
+
+    // OPTIMIZATION 3: Memoize station IDs to prevent unnecessary effect triggers
+    const stationIdsString = React.useMemo(() =>
+            stations.map(s => s.stationId).join(','),
+        [stations]);
+
+    // OPTIMIZATION 4: Optimized Measurement Fetcher
+    const fetchMeasurements = useCallback(async (page, isNewFilter = false) => {
+        // Cancel previous pending request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        const signal = abortControllerRef.current.signal;
+
+        // Don't fetch if no stations are found (unless we want to show empty state)
+        if (stations.length === 0 && !stationsLoading) {
+            setMeasurements([]);
+            setNumOfMeasurements(0);
+            return;
+        }
+
         try {
             setLoading(true);
-            const searchedStations = await stationsService.searchStations(searchTerm);
-            const filteredStations = searchedStations.filter(station => {
-                return isPointInPolygon(
-                    { lat: station.latitude, lng: station.longitude },
-                    areaPolygon,
-                );
-            });
-            const stationIdsString = filteredStations.map(station => station.stationId).join(',');
-            const measurementsData = await measurementsService.getMeasurements(stationIdsString,
-                selectedMeasurementType["id"], startDate, endDate, page, elementsInPage);
 
-            const typeData = await measurementsService.getMeasurementsTypes(stationIdsString, null,
-                startDate, endDate);
+            // OPTIMIZATION 5: Parallel Requests with Promise.all
+            const [measurementsData, typesData] = await Promise.all([
+                measurementsService.getMeasurements(
+                    stationIdsString,
+                    selectedMeasurementType["id"],
+                    startDate,
+                    endDate,
+                    page,
+                    elementsInPage
+                ),
+                // We typically only need to re-fetch types if the filter context (stations/time) changes,
+                // but fetching them in parallel is cheap enough here.
+                measurementsService.getMeasurementsTypes(
+                    stationIdsString,
+                    null,
+                    startDate,
+                    endDate
+                )
+            ]);
 
-            const totalMeasurements = typeData.reduce((sum, item) =>
+            if (signal.aborted) return;
+
+            // Update Types & Counts
+            setTypeData(typesData);
+            const totalMeasurements = typesData.reduce((sum, item) =>
                 sum + item.n_occurrences_in_filtered_data, 0);
+            setNumOfMeasurements(totalMeasurements);
 
-            const firstPage = measurementsData["firstPage"];
-
-            if (firstPage) {
+            // Update Measurements
+            if (isNewFilter || measurementsData["firstPage"]) {
                 setMeasurements(measurementsData["data"]);
             } else {
-                setMeasurements(measurements.concat(measurementsData["data"]));
+                // OPTIMIZATION 6: Functional update for safety
+                setMeasurements(prev => prev.concat(measurementsData["data"]));
             }
-            setCurrentPage(page);
+
             setNumOfPages(measurementsData["numOfPages"]);
-            setTypeData(typeData);
-            setStations(filteredStations);
-            setNumOfMeasurements(totalMeasurements);
             setIsLastPage(measurementsData["lastPage"]);
-
-
-            // setElementsInPage(measurementsData["elementsInPage"]);
-
+            setCurrentPage(page);
             setError(null);
+
         } catch (err) {
-            console.error('Failed to fetch data:', err);
-            setError('Error loading data');
+            if (err.name !== 'AbortError') {
+                console.error('Failed to fetch measurements:', err);
+                setError('Error loading data');
+            }
         } finally {
-            setLoading(false);
+            if (!signal.aborted) {
+                setLoading(false);
+            }
         }
-    };
+    }, [stationIdsString, selectedMeasurementType, startDate, endDate, elementsInPage, stationsLoading, stations.length]);
 
 
+    // Trigger fetch when dependencies change (Reset to page 0)
+    useEffect(() => {
+        // Wait for stations to finish loading before fetching measurements
+        if (!stationsLoading) {
+            fetchMeasurements(0, true);
+        }
+    }, [fetchMeasurements, stationsLoading]);
+    // fetchMeasurements depends on stationIdsString, so this runs when stations update
 
 
-    // const availableMeasurementTypes = [...new Set(filteredByStations.map(m => m.type))].sort();
-
-    // Handler for the Export button
     const handleExport = () => {
-       const dataToExport = measurements.map(m => ({
-         ...m,
-           measuredAt: new Date(m.measuredAt).toLocaleString('hr-HR')
+        const dataToExport = measurements.map(m => ({
+            ...m,
+            measuredAt: new Date(m.measuredAt).toLocaleString('hr-HR')
         }));
-
         downloadCSV(dataToExport, 'measurements-export.csv');
     };
 
-    if (loading) {
+    // UI Loading state now checks both
+    const isGlobalLoading = loading || stationsLoading;
+
+    if (isGlobalLoading && measurements.length === 0) {
         return <div className="loading-container">Loading data...</div>;
     }
 
@@ -156,24 +213,18 @@ function TableView() {
 
             {stations.length > 0 && (
                 <div className="measurement-type-filter">
-                    <label
-                        htmlFor="measurementType"
-                        className="measurement-type-label"
-                    >
+                    <label htmlFor="measurementType" className="measurement-type-label">
                         Measurement Type
                     </label>
                     <div className="select-and-button">
                         <select
                             id="measurementType"
-                            // Bind value to the ID, not the name (it's safer/unique)
                             value={selectedMeasurementType.id || "all"}
                             onChange={(e) => {
                                 const selectedId = e.target.value;
-
                                 if (selectedId === "all") {
                                     setSelectedMeasurementType({ id: null, name: "All Types" });
                                 } else {
-                                    // Find the specific type object to get the name back
                                     const type = typeData.find(t => String(t.measurement_type_id) === selectedId);
                                     if (type) {
                                         setSelectedMeasurementType({
@@ -185,23 +236,15 @@ function TableView() {
                             }}
                             className="measurement-type-select"
                         >
-                            {/* Ideally calculate the total count sum for 'All' */}
                             <option value="all">All Types ({numOfMeasurements} measurements)</option>
-
-                            {typeData.map(type => {
-                                const count = type["n_occurrences_in_filtered_data"];
-                                const id = type["measurement_type_id"];
-                                const name = type["measurement_type_name"];
-
-                                return (
-                                    <option
-                                        key={id}       // Unique key is required for React lists
-                                        value={id}     // Set the value to the ID
-                                    >
-                                        {name} ({count} measurements)
-                                    </option>
-                                );
-                            })}
+                            {typeData.map(type => (
+                                <option
+                                    key={type.measurement_type_id}
+                                    value={type.measurement_type_id}
+                                >
+                                    {type.measurement_type_name} ({type.n_occurrences_in_filtered_data} measurements)
+                                </option>
+                            ))}
                         </select>
 
                         <button
@@ -213,13 +256,10 @@ function TableView() {
                             Export Data
                         </button>
                     </div>
-
-
-
                 </div>
             )}
 
-            {measurements.length === 0 ? (
+            {measurements.length === 0 && !isGlobalLoading ? (
                 <p className="no-measurements-text">
                     {(searchTerm || areaPolygon || startDate || endDate)
                         ? 'No measurements match your filters.'
@@ -259,18 +299,15 @@ function TableView() {
                 </>
             )}
 
-            {isLastPage ? null :
-                <button onClick={() => {
-                    if (currentPage < numOfPages - 1) {
-                        // setCurrentPage(currentPage + 1);
-                        fetchData(currentPage + 1);
-                    }
-                }}>
-                    Load More
+            {!isLastPage && (
+                <button
+                    onClick={() => fetchMeasurements(currentPage + 1, false)}
+                    disabled={loading}
+                    className="load-more-button"
+                >
+                    {loading ? 'Loading...' : 'Load More'}
                 </button>
-            }
-
-
+            )}
         </div>
     );
 }

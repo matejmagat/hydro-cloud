@@ -29,67 +29,95 @@ ChartJS.register(
     Legend
 );
 
+// OPTIMIZATION 1: Move static helper outside component
+const isPointInPolygon = (point, polygon) => {
+    if (!polygon || polygon.length < 3) return true;
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat, yi = polygon[i].lng;
+        const xj = polygon[j].lat, yj = polygon[j].lng;
+        const intersect = ((yi > point.lng) !== (yj > point.lng))
+            && (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+};
+
 function ChartView() {
+    // State
     const [measurements, setMeasurements] = useState([]);
     const [stations, setStations] = useState([]);
     const [typeData, setTypeData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);          // Chart loading
+    const [stationsLoading, setStationsLoading] = useState(false); // Station search loading
     const [error, setError] = useState(null);
     const [numOfMeasurements, setNumOfMeasurements] = useState(0);
 
-    // Match TableView state structure for type selection
     const [selectedMeasurementType, setSelectedMeasurementType] = useState({ id: null, name: 'all' });
     const [chartType, setChartType] = useState('line');
 
+    // Context
     const { searchTerm, areaPolygon, startDate, endDate } = useFilter();
 
+    // Refs
     const chartRef = useRef(null);
+    const abortControllerRef = useRef(null);
 
-    const isPointInPolygon = (point, polygon) => {
-        if (!polygon || polygon.length < 3) return true;
-        let inside = false;
-        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-            const xi = polygon[i].lat, yi = polygon[i].lng;
-            const xj = polygon[j].lat, yj = polygon[j].lng;
-            const intersect = ((yi > point.lng) !== (yj > point.lng))
-                && (point.lat < (xj - xi) * (point.lng - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
-        }
-        return inside;
-    };
-
+    // OPTIMIZATION 2: Independent Station Fetching
     useEffect(() => {
-        fetchData();
-    }, [searchTerm, areaPolygon, startDate, endDate, selectedMeasurementType.id]);
+        let active = true;
+        const fetchStations = async () => {
+            try {
+                setStationsLoading(true);
+                const searchedStations = await stationsService.searchStations(searchTerm);
 
-    const fetchData = async () => {
+                if (!active) return;
+
+                const filteredStations = searchedStations.filter(station => {
+                    return isPointInPolygon(
+                        { lat: station.latitude, lng: station.longitude },
+                        areaPolygon,
+                    );
+                });
+                setStations(filteredStations);
+            } catch (err) {
+                console.error('Failed to fetch stations:', err);
+                if (active) setError('Error loading stations');
+            } finally {
+                if (active) setStationsLoading(false);
+            }
+        };
+
+        fetchStations();
+        return () => { active = false; };
+    }, [searchTerm, areaPolygon]);
+
+    // OPTIMIZATION 3: Memoize station IDs
+    const stationIdsString = useMemo(() =>
+            stations.map(s => s.stationId).join(','),
+        [stations]);
+
+    // OPTIMIZATION 4: Optimized Chart Data Fetching
+    const fetchChartData = useCallback(async () => {
+        // Cancel previous request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        const signal = abortControllerRef.current.signal;
+
+        // Early exit if no stations (and not currently loading them)
+        if (stations.length === 0 && !stationsLoading) {
+            setMeasurements([]);
+            setTypeData([]);
+            setNumOfMeasurements(0);
+            return;
+        }
+
         try {
             setLoading(true);
 
-            // 1. Search and Filter Stations (Backend Search + Frontend Polygon)
-            const searchedStations = await stationsService.searchStations(searchTerm);
-            const filteredStations = searchedStations.filter(station => {
-                return isPointInPolygon(
-                    { lat: station.latitude, lng: station.longitude },
-                    areaPolygon,
-                );
-            });
-
-            const stationIdsString = filteredStations.map(station => station.stationId).join(',');
-
-            // If no stations match, clear data and return early
-            if (!stationIdsString && filteredStations.length === 0) {
-                setMeasurements([]);
-                setStations([]);
-                setTypeData([]);
-                setNumOfMeasurements(0);
-                setLoading(false);
-                return;
-            }
-
-            // 2. Fetch Measurements and Types (Backend Filter)
-            // We request a large page size (1000) to get enough data for the chart
-            // since charts don't typically use pagination like tables.
+            // OPTIMIZATION 5: Parallel Fetching
             const [measurementsResponse, typesResponse] = await Promise.all([
                 measurementsService.getMeasurements(
                     stationIdsString,
@@ -97,7 +125,7 @@ function ChartView() {
                     startDate,
                     endDate,
                     0,    // Page 0
-                    1000  // Limit 1000 items for chart visualization
+                    1000  // Limit 1000 for chart
                 ),
                 measurementsService.getMeasurementsTypes(
                     stationIdsString,
@@ -107,28 +135,39 @@ function ChartView() {
                 )
             ]);
 
+            if (signal.aborted) return;
+
             const totalMeasurements = typesResponse.reduce((sum, item) =>
                 sum + item.n_occurrences_in_filtered_data, 0);
 
             setMeasurements(measurementsResponse.data);
-            setStations(filteredStations);
             setTypeData(typesResponse);
             setNumOfMeasurements(totalMeasurements);
             setError(null);
 
         } catch (err) {
-            console.error('Failed to fetch data:', err);
-            setError('Error loading data');
+            if (err.name !== 'AbortError') {
+                console.error('Failed to fetch chart data:', err);
+                setError('Error loading data');
+            }
         } finally {
-            setLoading(false);
+            if (!signal.aborted) {
+                setLoading(false);
+            }
         }
-    };
+    }, [stationIdsString, selectedMeasurementType, startDate, endDate, stationsLoading, stations.length]);
 
-    // Prepare Chart Data (Using the already filtered 'measurements' from state)
+    // Trigger fetch when dependencies change
+    useEffect(() => {
+        if (!stationsLoading) {
+            fetchChartData();
+        }
+    }, [fetchChartData, stationsLoading]);
+
+    // Prepare Chart Data
     const chartData = useMemo(() => {
         if (measurements.length === 0) return null;
 
-        // Extract unique sorted timestamps for X-axis labels
         const labels = [...new Set(measurements.map(m => m.measuredAt))]
             .sort()
             .map(dateStr => new Date(dateStr).toLocaleString('hr-HR'));
@@ -136,7 +175,6 @@ function ChartView() {
         const groupedData = {};
 
         measurements.forEach(m => {
-            // Group by "Station (Type)" if looking at all types, or just "Station" if specific type selected
             const labelKey = selectedMeasurementType.id === null
                 ? `${m.station} (${m.type})`
                 : m.station;
@@ -174,7 +212,7 @@ function ChartView() {
         return { labels, datasets };
     }, [measurements, selectedMeasurementType]);
 
-    const chartOptions = {
+    const chartOptions = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -197,7 +235,7 @@ function ChartView() {
                 }
             }
         }
-    };
+    }), [selectedMeasurementType, measurements]);
 
     const handleExport = useCallback(() => {
         if (chartRef.current) {
@@ -208,7 +246,12 @@ function ChartView() {
         }
     }, [selectedMeasurementType]);
 
-    if (loading) return <div className="loading-container">Loading charts...</div>;
+    const isGlobalLoading = loading || stationsLoading;
+
+    if (isGlobalLoading && measurements.length === 0) {
+        return <div className="loading-container">Loading charts...</div>;
+    }
+
     if (error) return <div className="error-state"><h2>{error}</h2></div>;
 
     return (
@@ -218,9 +261,7 @@ function ChartView() {
                 {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${stations.length} stations)`}
             </h2>
 
-            {/* Controls Section */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
-
                 {stations.length > 0 && (
                     <div className="measurement-type-filter" style={{ margin: 0 }}>
                         <label htmlFor="measurementType" className="measurement-type-label">
@@ -272,6 +313,15 @@ function ChartView() {
                         <option value="bar">Bar Chart</option>
                     </select>
                 </div>
+                <button
+                    className="export-button"
+                    style={{ marginTop: '20px' }}
+                    onClick={handleExport}
+                    disabled={!chartData || chartData.datasets.length === 0}
+                >
+                    Export Chart
+                </button>
+
             </div>
 
             <div style={{ height: '400px', width: '100%', backgroundColor: '#fff', padding: '10px', borderRadius: '4px' }}>
@@ -288,14 +338,6 @@ function ChartView() {
                 )}
             </div>
 
-            <button
-                className="export-button"
-                style={{ marginTop: '20px' }}
-                onClick={handleExport}
-                disabled={!chartData || chartData.datasets.length === 0}
-            >
-                Export Chart
-            </button>
 
         </div>
     );
