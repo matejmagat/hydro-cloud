@@ -39,7 +39,7 @@ public class MeasurementsService {
     private final DataMapper dataMapper;
 
     public HydroPage<MeasurementResponseDto> getMeasurements(
-            Long stationId,
+            List<Long> stationIds,
             Long typeId,
             OffsetDateTime fromDate,
             OffsetDateTime toDate,
@@ -47,7 +47,7 @@ public class MeasurementsService {
 
         // The repository query now handles all NULL checks internally
         Page<MeasurementDataPoint> measurementDataPoints =
-                measurementDataPointRepository.findWithFilters(stationId, typeId, fromDate, toDate, pageable);
+                measurementDataPointRepository.findWithFilters(stationIds, typeId, fromDate, toDate, pageable);
 
         return HydroPageUtil.toPage(measurementDataPoints, dataMapper::toMeasurementResponseDto);
     }
@@ -97,11 +97,11 @@ public class MeasurementsService {
     }
 
     public List<MeasurementTypeCountDto> getMeasurementTypesStatistics(
-            Long stationId,
+            List<Long> stationIds,
             Long typeId,
             OffsetDateTime fromDate,
             OffsetDateTime toDate) {
 
-        return measurementDataPointRepository.countTypesWithFilters(stationId, typeId, fromDate, toDate);
+        return measurementDataPointRepository.countTypesWithFilters(stationIds, typeId, fromDate, toDate);
     }
 }

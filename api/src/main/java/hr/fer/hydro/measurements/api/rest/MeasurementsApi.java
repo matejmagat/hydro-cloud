@@ -39,7 +39,7 @@ public interface MeasurementsApi {
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<HydroPage<MeasurementResponseDto>> getMeasurements(
-            @RequestParam(required = false) Long stationId,
+            @RequestParam(required = false) List<Long> stationId,
 
             @RequestParam(required = false) Long typeId,
 
@@ -104,7 +104,7 @@ public interface MeasurementsApi {
     })
     @GetMapping(value = "/types", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<List<MeasurementTypeCountDto>> getMeasurementTypesStatistics(
-            @RequestParam(required = false) Long stationId,
+            @RequestParam(required = false) List<Long> stationId,
             @RequestParam(required = false) Long typeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate

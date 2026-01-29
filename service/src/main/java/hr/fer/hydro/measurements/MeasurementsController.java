@@ -22,7 +22,7 @@ public class MeasurementsController implements MeasurementsApi {
     private final MeasurementsService measurementsService;
 
     @Override
-    public ResponseEntity<HydroPage<MeasurementResponseDto>> getMeasurements(Long stationId, Long typeId,
+    public ResponseEntity<HydroPage<MeasurementResponseDto>> getMeasurements(List<Long> stationId, Long typeId,
                                                                              OffsetDateTime fromDate, OffsetDateTime toDate, Pageable pageable) {
         return ResponseEntity
                 .ok(measurementsService.getMeasurements(stationId, typeId, fromDate, toDate,pageable));
@@ -30,7 +30,7 @@ public class MeasurementsController implements MeasurementsApi {
 
     @Override
     public ResponseEntity<List<MeasurementTypeCountDto>> getMeasurementTypesStatistics(
-            Long stationId,
+            List<Long> stationId,
             Long typeId,
             OffsetDateTime fromDate,
             OffsetDateTime toDate) {

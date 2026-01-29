@@ -20,29 +20,30 @@ public interface MeasurementDataPointRepository extends JpaRepository<Measuremen
     List<MeasurementDataPoint> findByStationIdAndMeasurementTypeId(Long stationId, Long typeId);
 
     @Query("SELECT m FROM MeasurementDataPoint m WHERE " +
-            "(:stationId IS NULL OR m.station.id = :stationId) AND " +
+            "((:stationIds) IS NULL OR m.station.id IN (:stationIds)) AND " +
             "(:typeId IS NULL OR m.measurementType.id = :typeId) AND " +
             "(cast(:fromDate as timestamp) IS NULL OR m.measurementValue.measuredAt >= :fromDate) AND " +
             "(cast(:toDate as timestamp) IS NULL OR m.measurementValue.measuredAt <= :toDate)")
     Page<MeasurementDataPoint> findWithFilters(
-            @Param("stationId") Long stationId,
+            @Param("stationIds") List<Long> stationIds,
             @Param("typeId") Long typeId,
             @Param("fromDate") OffsetDateTime fromDate,
             @Param("toDate") OffsetDateTime toDate,
             Pageable pageable);
 
+    //"((:stationIds) IS NULL OR m.station.id IN (:stationIds)) AND
     @Query("SELECT new hr.fer.hydro.measurements.dto.MeasurementTypeCountDto(" +
             "m.measurementType.id, " +
             "m.measurementType.name, " +
             "COUNT(m)) " +
             "FROM MeasurementDataPoint m WHERE " +
-            "(:stationId IS NULL OR m.station.id = :stationId) AND " +
+            "((:stationIds) IS NULL OR m.station.id IN (:stationIds)) AND " +
             "(:typeId IS NULL OR m.measurementType.id = :typeId) AND " +
             "(cast(:fromDate as timestamp) IS NULL OR m.measurementValue.measuredAt >= :fromDate) AND " +
             "(cast(:toDate as timestamp) IS NULL OR m.measurementValue.measuredAt <= :toDate) " +
             "GROUP BY m.measurementType.id, m.measurementType.name")
     List<MeasurementTypeCountDto> countTypesWithFilters(
-            @Param("stationId") Long stationId,
+            @Param("stationIds") List<Long> stationIds,
             @Param("typeId") Long typeId,
             @Param("fromDate") OffsetDateTime fromDate,
             @Param("toDate") OffsetDateTime toDate
