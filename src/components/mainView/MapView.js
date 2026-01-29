@@ -123,6 +123,7 @@ function MapView() {
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(null);
     const [mapCenter] = useState([44.5, 16.5]);
+    const isLoggedIn = !!localStorage.getItem('authToken');
     const { setActiveTab } = useTab();
     const {
         searchTerm,
@@ -154,6 +155,12 @@ function MapView() {
     }, [searchTerm]);
 
     useEffect(() => {
+        if (!isLoggedIn) {
+            setLoading(false);
+            setStations([]);
+            return;
+        }
+
         const fetchStations = async () => {
             try {
                 setLoading(true);
@@ -170,7 +177,7 @@ function MapView() {
         };
 
         fetchStations();
-    }, [debouncedSearchTerm]);
+    }, [debouncedSearchTerm, isLoggedIn]);
 
     const handleDeleteStation = async (stationId, stationName) => {
         if (!window.confirm(`Are you sure you want to delete station "${stationName}"?`)) {
@@ -288,7 +295,7 @@ function MapView() {
 
     return (
         <div className="map-view-container">
-            {!showModal && !isSelectingArea && (
+            {isLoggedIn && !showModal && !isSelectingArea && (
                 <button
                     onClick={handleOpenModal}
                     className="add-station-btn"
@@ -411,6 +418,12 @@ function MapView() {
                 maxBounds={CROATIA_BOUNDS}
                 maxBoundsViscosity={0.8}
                 className="map-container"
+                dragging={isLoggedIn}
+                zoomControl={isLoggedIn}
+                scrollWheelZoom={isLoggedIn}
+                doubleClickZoom={isLoggedIn}
+                touchZoom={isLoggedIn}
+                boxZoom={isLoggedIn}
             >
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -498,7 +511,7 @@ function MapView() {
                     </Marker>
                 ))}
 
-                {filteredStations.length === 0 && !showModal && !isSelectingArea && (
+                {isLoggedIn && !loading && filteredStations.length === 0 && !showModal && !isSelectingArea && (
                     <div className="empty-state">
                         {searchTerm || areaPolygon ? 'No stations matching filters' : 'No stations available'}
                     </div>

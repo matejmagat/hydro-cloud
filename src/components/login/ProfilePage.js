@@ -20,6 +20,7 @@ function ProfilePage() {
     const [qrCode, setQrCode] = useState(null);
     const [setupCode, setSetupCode] = useState('');
     const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
     const [message, setMessage] = useState(null);
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
     const [showSetup, setShowSetup] = useState(false);
@@ -87,11 +88,47 @@ function ProfilePage() {
         fetchStatus();
     }, [navigate]);
 
+    const validateForm = () => {
+        const errors = {};
+        
+        if (!userInfo.firstName.trim()) {
+            errors.firstName = "First name is required";
+        } else if (userInfo.firstName.length < 1 || userInfo.firstName.length > 50) {
+            errors.firstName = "First name must be between 1 and 50 characters";
+        }
+        
+        if (!userInfo.lastName.trim()) {
+            errors.lastName = "Last name is required";
+        } else if (userInfo.lastName.length < 1 || userInfo.lastName.length > 50) {
+            errors.lastName = "Last name must be between 1 and 50 characters";
+        }
+        
+        if (!userInfo.username.trim()) {
+            errors.username = "Username is required";
+        } else if (userInfo.username.length < 4 || userInfo.username.length > 30) {
+            errors.username = "Username must be between 4 and 30 characters";
+        }
+        
+        if (!userInfo.email.trim()) {
+            errors.email = "Email is required";
+        } else if (!/\S+@\S+\.\S+/.test(userInfo.email)) {
+            errors.email = "Email must be valid";
+        }
+        
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     // --- New Handler: Update User Info ---
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
         setProfileMessage(null);
         setProfileError(null);
+        setFieldErrors({});
+
+        if (!validateForm()) {
+            return;
+        }
 
         const token = localStorage.getItem('authToken');
 
@@ -105,15 +142,33 @@ function ProfilePage() {
                 body: JSON.stringify(userInfo),
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to update profile');
+            if (response.ok) {
+                setProfileMessage('Profile updated successfully!');
+            } else {
+                let errorMessage = "Failed to update profile";
+                
+                try {
+                    const data = await response.json();
+                    console.log("Backend error:", JSON.stringify(data, null, 2));
+                    
+                    if (data.detail) {
+                        const match = data.detail.match(/"([^"]+)"/);
+                        errorMessage = match ? match[1] : data.detail;
+                    } else if (data.errors && typeof data.errors === 'object') {
+                        const firstError = Object.values(data.errors)[0];
+                        errorMessage = firstError || "Validation failed";
+                        setFieldErrors(data.errors);
+                    } else if (data.message) {
+                        errorMessage = data.message;
+                    } else if (data.title) {
+                        errorMessage = data.title;
+                    }
+                } catch (parseError) {
+                    console.error("Could not parse error response:", parseError);
+                }
+                
+                setProfileError(errorMessage);
             }
-
-            // Optional: You might want to update the state with the response if the API returns the updated object
-            // const updatedData = await response.json();
-            // setUserInfo(updatedData);
-
-            setProfileMessage('Profile updated successfully!');
         } catch (err) {
             console.error(err);
             setProfileError('Could not update profile. Please try again.');
@@ -126,6 +181,13 @@ function ProfilePage() {
             ...prev,
             [name]: value
         }));
+
+        if (fieldErrors[name]) {
+            setFieldErrors(prev => ({
+                ...prev,
+                [name]: null
+        }));
+    }
     };
 
     // --- Existing Handlers ---
@@ -137,6 +199,7 @@ function ProfilePage() {
 
     const handleActivate2FA = async () => {
         const token = localStorage.getItem('authToken');
+        setError(null);
 
         try {
             const response = await fetch(`${API_URL}/google-2fa/activate`, {
@@ -162,6 +225,7 @@ function ProfilePage() {
 
     const handleVerifySetup = async (event) => {
         event.preventDefault();
+        setError(null);
         const token = localStorage.getItem('authToken');
 
         try {
@@ -184,6 +248,10 @@ function ProfilePage() {
                 setMessage('2FA enabled successfully! Backup codes: ' + data.scratchCodes.join(', '));
                 setIs2FAEnabled(true);
                 setShowSetup(false);
+                setError(null);
+                setSetupCode('');
+            } else {
+                setError('Invalid verification code. Please try again.');
             }
         } catch (err) {
             console.error(err);
@@ -226,11 +294,8 @@ function ProfilePage() {
                 {profileMessage && (
                     <div style={{ color: 'green', marginBottom: '15px' }}>{profileMessage}</div>
                 )}
-                {profileError && (
-                    <div style={{ color: 'red', marginBottom: '15px' }}>{profileError}</div>
-                )}
 
-                <form onSubmit={handleUpdateProfile}>
+                <form onSubmit={handleUpdateProfile} noValidate>
                     <div style={{ marginBottom: '12px' }}>
                         <label htmlFor="firstName" style={{ display: 'block', marginBottom: '5px' }}>First Name</label>
                         <input
@@ -239,7 +304,13 @@ function ProfilePage() {
                             type="text"
                             value={userInfo.firstName}
                             onChange={handleInputChange}
+                            style={{ borderColor: fieldErrors.firstName ? "red" : undefined }}
                         />
+                        {fieldErrors.firstName && (
+                            <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                {fieldErrors.firstName}
+                            </div>
+                        )}
                     </div>
                     <div style={{ marginBottom: '12px' }}>
                         <label htmlFor="lastName" style={{ display: 'block', marginBottom: '5px' }}>Last Name</label>
@@ -249,7 +320,13 @@ function ProfilePage() {
                             type="text"
                             value={userInfo.lastName}
                             onChange={handleInputChange}
+                            style={{ borderColor: fieldErrors.lastName ? "red" : undefined }}
                         />
+                        {fieldErrors.lastName && (
+                            <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                {fieldErrors.lastName}
+                            </div>
+                        )}
                     </div>
                     <div style={{ marginBottom: '12px' }}>
                         <label htmlFor="username" style={{ display: 'block', marginBottom: '5px' }}>Username</label>
@@ -259,7 +336,13 @@ function ProfilePage() {
                             type="text"
                             value={userInfo.username}
                             onChange={handleInputChange}
+                            style={{ borderColor: fieldErrors.username ? "red" : undefined }}
                         />
+                        {fieldErrors.username && (
+                            <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                {fieldErrors.username}
+                            </div>
+                        )}
                     </div>
                     <div style={{ marginBottom: '12px' }}>
                         <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>Email</label>
@@ -269,8 +352,19 @@ function ProfilePage() {
                             type="email"
                             value={userInfo.email}
                             onChange={handleInputChange}
+                            style={{ borderColor: fieldErrors.email ? "red" : undefined }}
                         />
+                        {fieldErrors.email && (
+                            <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                {fieldErrors.email}
+                            </div>
+                        )}
                     </div>
+
+                    {profileError && (
+                        <div className="error-message">{profileError}</div>
+                    )}
+
                     <button type="submit">Update Profile</button>
                 </form>
             </section>
@@ -282,11 +376,6 @@ function ProfilePage() {
             {message && (
                 <div style={{ color: 'green', marginBottom: '15px' }}>
                     {message}
-                </div>
-            )}
-            {error && (
-                <div style={{ color: 'red', marginBottom: '15px' }}>
-                    {error}
                 </div>
             )}
 
@@ -334,10 +423,19 @@ function ProfilePage() {
                                 required
                             />
                         </div>
+
+                        {error && (
+                            <div className="error-message">{error}</div>
+                        )}
+
                         <button type="submit">Verify & Enable</button>
                         <button
                             type="button"
-                            onClick={() => setShowSetup(false)}
+                            onClick={() => {
+                                setShowSetup(false);
+                                setError(null);
+                                setSetupCode('');
+                            }}
                             className="submit-button"
                         >
                             Cancel

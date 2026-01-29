@@ -8,11 +8,35 @@ function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const [fieldErrors, setFieldErrors] = useState({});
     const navigate = useNavigate();
+
+    const validateForm = () => {
+        const errors = {};
+        if (!username.trim()) {
+            errors.username = 'Username is required';
+        } else if (username.length < 4) {
+            errors.username = 'Username must be at least 4 characters';
+        }
+
+        if (!password) {
+            errors.password = 'Password is required';
+        } else if (password.length < 8) {
+            errors.password = 'Password must be at least 8 characters';
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError(null);
+        setFieldErrors({});
+
+        if (!validateForm()) {
+            return;
+        }
 
         try {
             const response = await fetch(`${API_URL}/auth/login`, {
@@ -40,13 +64,25 @@ function LoginPage() {
                     navigate('/');
                 }
             } else {
-                if (contentType === 'application/json') {
+                let errorMessage = 'Login failed';
+                
+                if (contentType?.includes('application/json')) {
                     const data = await response.json();
-                    const error_message = Object.values(data)[0];
-                    throw new Error(error_message);
-                } else {
-                    throw new Error("Login failed");
+                    
+                    if (response.status === 401) {
+                    errorMessage = 'Invalid username or password';
+                    } else if (data.detail) {
+                    errorMessage = data.detail;
+                    } else if (data.message) {
+                    errorMessage = data.message;
+                    } else if (typeof data === 'object') {
+                    errorMessage = Object.values(data)[0] || errorMessage;
+                    }
+                } else if (response.status === 401) {
+                    errorMessage = 'Invalid username or password';
                 }
+                
+                setError(errorMessage);
             }
 
 
@@ -59,16 +95,28 @@ function LoginPage() {
     return (
         <div style={{ padding: '20px', maxWidth: '400px', margin: 'auto', height: '100vh' }}>
             <h1>Login</h1>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
                 <div style={{ marginBottom: '12px' }}>
                     <label htmlFor="username">Username:</label>
                     <input
                         id="username"
                         type="text"
                         value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        required
+                        onChange={(e) => {
+                            setUsername(e.target.value);
+                            if (fieldErrors.username) {
+                            setFieldErrors({ ...fieldErrors, username: null });
+                            }
+                        }}
+                        style={{
+                            borderColor: fieldErrors.username ? 'red' : undefined,
+                        }}
                     />
+                    {fieldErrors.username && (
+                        <div style={{ color: 'red', fontSize: '13px', marginTop: '4px' }}>
+                            {fieldErrors.username}
+                        </div>
+                    )}
                 </div>
                 <div style={{ marginBottom: '12px' }}>
                     <label htmlFor="password">Password:</label>
@@ -76,16 +124,24 @@ function LoginPage() {
                         id="password"
                         type="password"
                         value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (fieldErrors.password) {
+                            setFieldErrors({ ...fieldErrors, password: null });
+                            }
+                        }}
+                        style={{
+                            borderColor: fieldErrors.password ? 'red' : undefined,
+                        }}
                     />
+                    {fieldErrors.password && (
+                        <div style={{ color: 'red', fontSize: '13px', marginTop: '4px' }}>
+                            {fieldErrors.password}
+                        </div>
+                    )}
                 </div>
 
-                {error && (
-                    <div style={{ color: 'red', marginBottom: '12px' }}>
-                        {error}
-                    </div>
-                )}
+                {error && <div className="error-message">{error}</div>}
 
                 <button type="submit">Login</button>
             </form>
