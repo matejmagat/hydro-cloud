@@ -61,3 +61,16 @@ button:active {
     justify-content: center;
     color: var(--system-text-secondary);
 }
+
+.error-message {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #d32f2f;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: var(--system-radius);
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}

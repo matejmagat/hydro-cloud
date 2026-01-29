@@ -1,11 +1,14 @@
-// Sidebar.js
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './sidebar.css';
 import '../common.css';
 import { useFilter } from '../../context/FilterContext';
 import Tabs from "../navigation/Tabs";
 
 function Sidebar({ tabs, activeTab, setActiveTab }) {
+    const navigate = useNavigate();
+    const isLoggedIn = !!localStorage.getItem('authToken');
+    
     const {
         searchTerm,
         setSearchTerm,
@@ -14,12 +17,38 @@ function Sidebar({ tabs, activeTab, setActiveTab }) {
         areaPolygon,
         setAreaPolygon,
         resetFilters,
-        // Destructure new values
         startDate,
         setStartDate,
         endDate,
         setEndDate
     } = useFilter();
+
+    if (!isLoggedIn) {
+        return (
+            <aside className="sidebar">
+                <div className="welcome-section">
+                    <h2 className="welcome-title">Welcome to Hydro Cloud</h2>
+                    <p className="welcome-text">
+                        Please log in or register to access stations and measurements.
+                    </p>
+                    
+                    <button 
+                        onClick={() => navigate('/login')}
+                        className="auth-button login-button"
+                    >
+                        Login
+                    </button>
+                    
+                    <button 
+                        onClick={() => navigate('/register')}
+                        className="auth-button register-button"
+                    >
+                        Register
+                    </button>
+                </div>
+            </aside>
+        );
+    }
 
     const handleAreaSelection = () => {
         if (areaPolygon) {
@@ -82,7 +111,6 @@ function Sidebar({ tabs, activeTab, setActiveTab }) {
                 <div className="time-period-row">
                     <div>
                         <div className="time-period-label">From</div>
-                        {/* Connected Start Date Input */}
                         <input
                             type="date"
                             className="time-period-input"
@@ -92,7 +120,6 @@ function Sidebar({ tabs, activeTab, setActiveTab }) {
                     </div>
                     <div>
                         <div className="time-period-label">To</div>
-                        {/* Connected End Date Input */}
                         <input
                             type="date"
                             className="time-period-input"

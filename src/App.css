@@ -18,6 +18,7 @@
   flex: 1;
   display: flex;
   overflow: hidden;
+  height: 85vh;
   margin: 0;
   background: var(--system-white);
   box-shadow: 0 -10px 40px rgba(0,0,0,0.03); /* Subtle separation from header */
