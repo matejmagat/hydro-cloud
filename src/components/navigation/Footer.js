@@ -10,8 +10,8 @@ function Footer() {
                 </a>
             </div>
             <div>
-                <a href="/public" className="link">contact</a>
-                <a href="/public" className="link">info</a>
+                <a href="/public" className="link">Contact</a>
+                <a href="/public" className="link">Info</a>
             </div>
         </nav>
     );

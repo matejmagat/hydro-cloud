@@ -284,7 +284,6 @@ function ChartView() {
                                     }
                                 }
                             }}
-                            className="measurement-type-select"
                         >
                             <option value="all">All Types ({numOfMeasurements})</option>
                             {typeData.map(type => (
@@ -307,7 +306,7 @@ function ChartView() {
                         id="chartType"
                         value={chartType}
                         onChange={(e) => setChartType(e.target.value)}
-                        className="measurement-type-select"
+
                     >
                         <option value="line">Line Chart</option>
                         <option value="bar">Bar Chart</option>

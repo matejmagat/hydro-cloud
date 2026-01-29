@@ -207,7 +207,7 @@ function TableView() {
     return (
         <div className="table-view-container">
             <h2 className="table-view-title">
-                Measurements
+                Measurements Table
                 {(searchTerm || areaPolygon || startDate || endDate) && ` - Filtered (${stations.length} stations)`}
             </h2>
 
@@ -234,7 +234,6 @@ function TableView() {
                                     }
                                 }
                             }}
-                            className="measurement-type-select"
                         >
                             <option value="all">All Types ({numOfMeasurements} measurements)</option>
                             {typeData.map(type => (

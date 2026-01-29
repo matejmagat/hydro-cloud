@@ -28,9 +28,8 @@ function MainView() {
 
     return (
         <div className="app-container">
-            <Tabs tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab} />
             <div className="main-layout" style={{ display: 'flex', height: 'calc(100vh - 160px)', overflow: 'hidden' }}>
-                <Sidebar />
+                <Sidebar tabs={tabNames} activeTab={activeTab} setActiveTab={setActiveTab}/>
                 {views[activeTab] || null}
             </div>
         </div>
