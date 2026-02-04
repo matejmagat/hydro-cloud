@@ -48,7 +48,7 @@ npm install
 2. Update the backend API URL to point to your local backend server:
 
 ```env
-REACT_APP_API_URL=http://localhost:8080/api
+REACT_APP_API_URL=http://localhost:8081/api
 ```
 
 ### 5. Start the Development Server
