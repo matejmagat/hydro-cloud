@@ -1,7 +1,10 @@
 package hr.fer.hydro.measurements.api.rest;
 
+import hr.fer.hydro.measurements.dto.MeasurementBulkRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementRequestDto;
 import hr.fer.hydro.measurements.dto.MeasurementResponseDto;
+import hr.fer.hydro.measurements.dto.MeasurementTypeCountDto;
+import hr.fer.hydro.pagination.HydroPage;
 import hr.fer.hydro.stations.dto.StationResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,11 +14,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @CrossOrigin
@@ -32,10 +41,14 @@ public interface MeasurementsApi {
             @ApiResponse(responseCode = "403", description = "Zabranjen pristup.")
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<MeasurementResponseDto>> getMeasurements(
-            @RequestParam(required = false) Long stationId,
+    ResponseEntity<HydroPage<MeasurementResponseDto>> getMeasurements(
+            @RequestParam(required = false) List<Long> stationId,
 
-            @RequestParam(required = false) Long typeId
+            @RequestParam(required = false) Long typeId,
+
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate,
+            @ParameterObject Pageable pageable
     );
 
     @Operation(summary = "Kreira novo meteorološko mjerenje")
@@ -52,6 +65,36 @@ public interface MeasurementsApi {
     ResponseEntity<MeasurementResponseDto> createMeasurement(
             @RequestBody MeasurementRequestDto measurementRequestDto
     );
+
+    @Operation(summary = "Učitava nova meteorološka mjerenja u json formatu")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Meteorološke stanice uspješno učitane.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = MeasurementResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
+            @ApiResponse(responseCode = "403", description = "Zabranjen pristup."),
+            @ApiResponse(responseCode = "404", description = "Entiteti s navedenim ID-jem ne postoje.")
+    })
+    @PostMapping(value = "/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Void> importMeasurementsJson(
+            @RequestBody List<MeasurementBulkRequestDto> measurements
+    );
+
+    @Operation(summary = "Učitava nova meteorološka mjerenja iz csv/xls datoteke")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Meteorološke stanice uspješno učitane.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = MeasurementResponseDto.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
+            @ApiResponse(responseCode = "403", description = "Zabranjen pristup."),
+            @ApiResponse(responseCode = "404", description = "Entiteti s navedenim ID-jem ne postoje.")
+    })
+    @PostMapping(value = "/bulk", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ResponseEntity<Void> importMeasurementsFile(
+            @RequestPart("file") MultipartFile file
+    ) throws IOException;
 
     @Operation(summary = "Dohvat meteorološkog mjerenja po ID-u")
     @ApiResponses(value = {
@@ -82,5 +125,21 @@ public interface MeasurementsApi {
     void deleteMeasurement(
             @Parameter(description = "ID meteorološkog mjerenja", required = true, example = "57")
             @PathVariable Long measurementId
+    );
+
+    @Operation(summary = "Dohvat statistike tipova mjerenja (broj pojavljivanja)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Statistika uspješno dohvaćena.",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            array = @ArraySchema(schema = @Schema(implementation = MeasurementTypeCountDto.class)))),
+            @ApiResponse(responseCode = "400", description = "Neispravan zahtjev."),
+            @ApiResponse(responseCode = "403", description = "Zabranjen pristup.")
+    })
+    @GetMapping(value = "/types", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<MeasurementTypeCountDto>> getMeasurementTypesStatistics(
+            @RequestParam(required = false) List<Long> stationId,
+            @RequestParam(required = false) Long typeId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate
     );
 }

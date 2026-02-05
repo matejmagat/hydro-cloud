@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.OffsetDateTime;
 
 @Getter
@@ -27,11 +25,11 @@ public class MeasurementValue {
     @Column(nullable = false)
     private Double value;
 
-    @CreationTimestamp
     @Column(nullable = false)
     private OffsetDateTime measuredAt;
 
-    public MeasurementValue(Double value) {
+    public MeasurementValue(Double value, OffsetDateTime measuredAt) {
         this.value = value;
+        this.measuredAt = measuredAt;
     }
 }
