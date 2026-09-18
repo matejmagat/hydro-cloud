@@ -1,0 +1,76 @@
+/* Inputs & Selects */
+input, select {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--system-text);
+    background: var(--system-white);
+    border: 1px solid var(--system-border);
+    border-radius: var(--system-radius);
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+}
+
+input:focus, select:focus {
+    border-color: var(--system-blue);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--system-text-secondary);
+    letter-spacing: -0.01em;
+}
+
+/* Buttons */
+button {
+    margin-top: 16px;
+    width: 100%;
+    padding: 10px 20px;
+    background: var(--system-blue);
+    color: white;
+    font-weight: 500;
+    font-size: 14px;
+    border: none;
+    border-radius: 999px; /* Pill shape */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    background-color: #0077ED; /* Slightly lighter blue */
+    transform: scale(1.01);
+}
+
+button:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+
+.loading-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--system-text-secondary);
+}
+
+.error-message {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #d32f2f;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: var(--system-radius);
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}

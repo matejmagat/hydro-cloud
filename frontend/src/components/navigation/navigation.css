@@ -1,0 +1,73 @@
+/* Navbar with Glassmorphism */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    height: 54px;
+    background-color: var(--glass-bg);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.logo {
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--system-text);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+}
+
+.link {
+    font-weight: 500;
+    font-size: 13px;
+    margin-left: 24px;
+    color: var(--system-text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    text-transform: capitalize;
+}
+
+.link:hover {
+    color: var(--system-blue);
+}
+
+/* Tab Selector (Segmented Control style) */
+.tab-selector {
+    display: flex;
+    flex-direction: row;
+    padding: 4px;
+    gap: 16px;
+    /*margin: 16px 24px 0 24px;*/
+    background: #e5e5ea; /* Darker gray track */
+    border-radius: 8px;
+    border: none;
+}
+
+.tab {
+    padding: 6px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--system-text);
+    cursor: pointer;
+    margin-top: 0; /* Override generic button margin */
+    width: auto;
+}
+
+.tab:hover {
+    background: rgba(255,255,255,0.5);
+    transform: none;
+}
+
+.tab.active {
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    font-weight: 600;
+}
